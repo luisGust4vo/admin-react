@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
@@ -8,6 +8,90 @@ import Checkbox from "../form/input/Checkbox";
 export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formValues, setFormValues] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
+  const navigate = useNavigate();
+
+  const handleChange = (field: keyof typeof formValues) =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setFormValues((prev) => ({ ...prev, [field]: event.target.value }));
+    };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+
+    const name = `${formValues.firstName.trim()} ${formValues.lastName.trim()}`
+      .trim()
+      .replace(/\s+/g, " ");
+    const email = formValues.email.trim();
+    const password = formValues.password;
+
+    if (!isChecked) {
+      setFormError("Você precisa aceitar os termos para continuar.");
+      return;
+    }
+
+    if (!email || !name || !password) {
+      setFormError("Preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    if (name.length < 2) {
+      setFormError("Nome deve ter pelo menos 2 caracteres.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setFormError("A senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
+
+    setFormError(null);
+    setIsSubmitting(true);
+
+    try {
+      const apiBase = import.meta.env.VITE_API_URL ?? "";
+      const normalizedBase = apiBase.replace(/\/$/, "");
+      const registerUrl = normalizedBase.endsWith("/register")
+        ? normalizedBase
+        : `${normalizedBase}/register`;
+      const response = await fetch(registerUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          name,
+          password,
+          termsAccepted: isChecked,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        const message =
+          payload?.message || "Não foi possível criar sua conta.";
+        setFormError(message);
+        return;
+      }
+
+      navigate("/signin");
+    } catch (error) {
+      console.error("Register request failed:", error);
+      setFormError("Falha ao conectar com o servidor. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar">
       <div className="w-full max-w-md mx-auto mb-5 sm:pt-10">
@@ -82,7 +166,12 @@ export default function SignUpForm() {
                 </span>
               </div>
             </div>
-            <form>
+            {formError && (
+              <div className="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700 dark:border-error-500/40 dark:bg-error-500/10 dark:text-error-200">
+                {formError}
+              </div>
+            )}
+            <form onSubmit={handleSubmit}>
               <div className="space-y-5">
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   {/* <!-- First Name --> */}
@@ -95,6 +184,8 @@ export default function SignUpForm() {
                       id="fname"
                       name="fname"
                       placeholder="Coloque seu primeiro nome"
+                      value={formValues.firstName}
+                      onChange={handleChange("firstName")}
                     />
                   </div>
                   {/* <!-- Last Name --> */}
@@ -107,6 +198,8 @@ export default function SignUpForm() {
                       id="lname"
                       name="lname"
                       placeholder="Coloque seu sobrenome"
+                      value={formValues.lastName}
+                      onChange={handleChange("lastName")}
                     />
                   </div>
                 </div>
@@ -120,6 +213,8 @@ export default function SignUpForm() {
                     id="email"
                     name="email"
                     placeholder="Entre com seu email"
+                    value={formValues.email}
+                    onChange={handleChange("email")}
                   />
                 </div>
                 {/* <!-- Password --> */}
@@ -131,6 +226,8 @@ export default function SignUpForm() {
                     <Input
                       placeholder="Crie sua senha"
                       type={showPassword ? "text" : "password"}
+                      value={formValues.password}
+                      onChange={handleChange("password")}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -164,8 +261,12 @@ export default function SignUpForm() {
                 </div>
                 {/* <!-- Button --> */}
                 <div>
-                  <button className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600">
-                    Sign Up
+                  <button
+                    className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isSubmitting}
+                    type="submit"
+                  >
+                    {isSubmitting ? "Criando conta..." : "Sign Up"}
                   </button>
                 </div>
               </div>
