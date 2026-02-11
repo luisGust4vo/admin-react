@@ -4,12 +4,14 @@ import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
+import Alert from "../ui/alert/Alert";
 
 export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [formValues, setFormValues] = useState({
     firstName: "",
     lastName: "",
@@ -54,6 +56,7 @@ export default function SignUpForm() {
     }
 
     setFormError(null);
+    setFormSuccess(null);
     setIsSubmitting(true);
 
     try {
@@ -83,7 +86,15 @@ export default function SignUpForm() {
         return;
       }
 
-      navigate("/signin");
+      setFormSuccess("Cadastro realizado com sucesso.");
+      setFormValues({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+      });
+      setIsChecked(false);
+      setTimeout(() => navigate("/signin"), 1200);
     } catch (error) {
       console.error("Register request failed:", error);
       setFormError("Falha ao conectar com o servidor. Tente novamente.");
@@ -169,6 +180,16 @@ export default function SignUpForm() {
             {formError && (
               <div className="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700 dark:border-error-500/40 dark:bg-error-500/10 dark:text-error-200">
                 {formError}
+              </div>
+            )}
+            {formSuccess && (
+              <div className="mb-4">
+                <Alert
+                  variant="success"
+                  title="Sucesso"
+                  message={formSuccess}
+                  showLink={false}
+                />
               </div>
             )}
             <form onSubmit={handleSubmit}>
