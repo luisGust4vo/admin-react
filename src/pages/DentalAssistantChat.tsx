@@ -498,6 +498,12 @@ const DentalAssistantChat: React.FC = () => {
               Envie imagens clínicas para receber análise, área suspeita
               destacada e relatório para apoio ao laudo.
             </p>
+            <div className="mt-3 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-xs text-warning-900 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-200">
+              <span className="font-semibold">Aviso importante:</span> este
+              assistente usa IA apenas para apoio clínico. As respostas não
+              substituem avaliação odontológica presencial, exames
+              complementares e decisão profissional do dentista responsável.
+            </div>
           </div>
 
           <div className="flex h-[calc(100vh-210px)] min-h-[620px] flex-col">
