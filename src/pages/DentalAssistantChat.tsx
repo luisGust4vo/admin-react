@@ -1,5 +1,41 @@
-import { ChangeEvent, FormEvent, KeyboardEvent, useMemo, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  KeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import PageMeta from "../components/common/PageMeta";
+
+type DetectionRegion = {
+  id?: string;
+  label?: string;
+  severity?: "baixa" | "media" | "alta";
+  confidence?: number;
+  bbox?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  circle?: {
+    cx: number;
+    cy: number;
+    r: number;
+  };
+  note?: string;
+};
+
+type ClinicalReport = {
+  summary?: string;
+  possibleDiagnosis?: string;
+  urgency?: string;
+  confidence?: string;
+  recommendations?: string[];
+  disclaimer?: string;
+};
 
 type ChatMessage = {
   id: string;
@@ -7,8 +43,11 @@ type ChatMessage = {
   text: string;
   createdAt: string;
   imageUrl?: string;
+  analysisImageUrl?: string;
   annotatedImageUrl?: string;
   diagnosis?: string;
+  findings?: DetectionRegion[];
+  report?: ClinicalReport;
 };
 
 type ChatApiResponse = {
@@ -19,10 +58,18 @@ type ChatApiResponse = {
   annotatedImageUrl?: string;
   circledImageUrl?: string;
   imageUrl?: string;
+  analysisImageUrl?: string;
+  findings?: DetectionRegion[];
+  regions?: DetectionRegion[];
+  report?: ClinicalReport;
+  clinicalReport?: ClinicalReport;
+  relatorio?: ClinicalReport;
 };
 
 const resolveChatApiUrl = () => {
-  const explicitUrl = import.meta.env.VITE_DENTAL_CHAT_API_URL as string | undefined;
+  const explicitUrl = import.meta.env.VITE_DENTAL_CHAT_API_URL as
+    | string
+    | undefined;
   if (explicitUrl) return explicitUrl.replace(/\/$/, "");
 
   const rawApiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
@@ -32,7 +79,9 @@ const resolveChatApiUrl = () => {
     const parsed = new URL(rawApiUrl);
     return `${parsed.origin}/ai/dental-chat`;
   } catch {
-    return `${rawApiUrl.replace(/\/$/, "").replace(/\/auth\/register$/, "")}/ai/dental-chat`;
+    return `${rawApiUrl
+      .replace(/\/$/, "")
+      .replace(/\/auth\/register$/, "")}/ai/dental-chat`;
   }
 };
 
@@ -47,13 +96,187 @@ const formatDateTime = (dateIso: string) =>
     minute: "2-digit",
   });
 
+const readFileAsDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+    reader.readAsDataURL(file);
+  });
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
+
+const toPercent = (value: number) => {
+  if (!Number.isFinite(value)) return 0;
+  if (value <= 1) return clamp(value * 100, 0, 100);
+  if (value <= 100) return clamp(value, 0, 100);
+  return clamp(value, 0, 100);
+};
+
+const normalizeFindings = (rawFindings?: DetectionRegion[]) => {
+  if (!Array.isArray(rawFindings)) return [];
+
+  return rawFindings
+    .map((item, index) => ({
+      id: item.id || `region-${index + 1}`,
+      label: item.label || `Achado ${index + 1}`,
+      severity: item.severity,
+      confidence: item.confidence,
+      bbox: item.bbox,
+      circle: item.circle,
+      note: item.note,
+    }))
+    .slice(0, 10);
+};
+
+const normalizeReport = (payload: ChatApiResponse): ClinicalReport | undefined => {
+  const report = payload.report || payload.clinicalReport || payload.relatorio;
+  if (!report) return undefined;
+
+  const recommendations = Array.isArray(report.recommendations)
+    ? report.recommendations.filter(Boolean)
+    : [];
+
+  return {
+    summary: report.summary,
+    possibleDiagnosis: report.possibleDiagnosis,
+    urgency: report.urgency,
+    confidence: report.confidence,
+    recommendations,
+    disclaimer:
+      report.disclaimer ||
+      "Análise gerada por IA para apoio clínico. Confirmar com avaliação presencial e exames complementares.",
+  };
+};
+
+const buildAssistantMessage = (
+  responsePayload: ChatApiResponse,
+  fallbackImageUrl?: string
+): Pick<
+  ChatMessage,
+  | "text"
+  | "diagnosis"
+  | "annotatedImageUrl"
+  | "analysisImageUrl"
+  | "findings"
+  | "report"
+> => {
+  const text =
+    responsePayload.answer ||
+    responsePayload.message ||
+    responsePayload.response ||
+    "Não recebi uma resposta detalhada do backend.";
+
+  return {
+    text,
+    diagnosis: responsePayload.diagnosis,
+    annotatedImageUrl:
+      responsePayload.annotatedImageUrl || responsePayload.circledImageUrl,
+    analysisImageUrl:
+      responsePayload.analysisImageUrl ||
+      responsePayload.imageUrl ||
+      fallbackImageUrl,
+    findings: normalizeFindings(responsePayload.findings || responsePayload.regions),
+    report: normalizeReport(responsePayload),
+  };
+};
+
+const DiagnosticImagePanel = ({
+  imageUrl,
+  annotatedImageUrl,
+  findings,
+}: {
+  imageUrl?: string;
+  annotatedImageUrl?: string;
+  findings?: DetectionRegion[];
+}) => {
+  if (!imageUrl && !annotatedImageUrl) return null;
+
+  return (
+    <div className="mt-3">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        Área suspeita destacada
+      </p>
+      {annotatedImageUrl ? (
+        <img
+          src={annotatedImageUrl}
+          alt="Imagem com região suspeita destacada"
+          className="max-h-96 w-auto rounded-lg border border-gray-200 object-contain dark:border-gray-700"
+        />
+      ) : (
+        <div className="relative inline-block overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+          <img
+            src={imageUrl}
+            alt="Imagem para análise odontológica"
+            className="max-h-96 w-auto object-contain"
+          />
+          {findings?.map((finding, index) => {
+            const circle = finding.circle;
+            const bbox = finding.bbox;
+
+            const centerX = circle
+              ? toPercent(circle.cx)
+              : bbox
+              ? toPercent(bbox.x + bbox.width / 2)
+              : 50;
+            const centerY = circle
+              ? toPercent(circle.cy)
+              : bbox
+              ? toPercent(bbox.y + bbox.height / 2)
+              : 50;
+            const radius = circle
+              ? toPercent(circle.r)
+              : bbox
+              ? Math.max(toPercent(bbox.width), toPercent(bbox.height)) * 0.65
+              : 8;
+            const size = clamp(radius * 2, 8, 95);
+
+            return (
+              <div
+                key={finding.id || `finding-${index + 1}`}
+                className="pointer-events-none absolute rounded-full border-[3px] border-error-500 shadow-lg"
+                style={{
+                  left: `${centerX}%`,
+                  top: `${centerY}%`,
+                  width: `${size}%`,
+                  height: `${size}%`,
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                <span className="absolute -top-6 left-1/2 -translate-x-1/2 rounded bg-error-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+                  {finding.label || `Achado ${index + 1}`}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {findings && findings.length > 0 && (
+        <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-300">
+          {findings.map((finding, index) => (
+            <p key={finding.id || index} className="mb-1 last:mb-0">
+              <span className="font-semibold">{finding.label || "Achado"}:</span>{" "}
+              {finding.note || "Área com alteração visual identificada."}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DentalAssistantChat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "initial-assistant-message",
       sender: "assistant",
-      text: "Envie uma foto de medicamento ou raio-x e descreva seu caso. Vou retornar uma análise inicial com a imagem anotada e possível diagnóstico.",
+      text: "Envie o raio-x ou foto clínica com uma breve observação. A IA retorna o possível diagnóstico, marca a área suspeita e gera um relatório técnico para apoio ao laudo.",
       createdAt: new Date().toISOString(),
+      report: {
+        disclaimer:
+          "Resultado assistivo por IA. Sempre validar com exame clínico e avaliação profissional presencial.",
+      },
     },
   ]);
   const [inputText, setInputText] = useState("");
@@ -63,9 +286,18 @@ const DentalAssistantChat: React.FC = () => {
   const [apiError, setApiError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const hasPendingInput = useMemo(() => {
-    return Boolean(inputText.trim() || selectedFile);
-  }, [inputText, selectedFile]);
+  const hasPendingInput = useMemo(
+    () => Boolean(inputText.trim() || selectedFile),
+    [inputText, selectedFile]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const clearSelectedFile = () => {
     if (previewUrl) {
@@ -87,6 +319,11 @@ const DentalAssistantChat: React.FC = () => {
       return;
     }
 
+    if (file.size > 12 * 1024 * 1024) {
+      setApiError("A imagem deve ter no máximo 12MB.");
+      return;
+    }
+
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
@@ -97,35 +334,74 @@ const DentalAssistantChat: React.FC = () => {
     setPreviewUrl(nextPreview);
   };
 
-  const buildAssistantMessage = (
-    responsePayload: ChatApiResponse
-  ): Pick<ChatMessage, "text" | "diagnosis" | "annotatedImageUrl"> => {
-    const text =
-      responsePayload.answer ||
-      responsePayload.message ||
-      responsePayload.response ||
-      "Não recebi uma resposta detalhada do backend.";
+  const downloadReport = (message: ChatMessage) => {
+    const createdAt = formatDateTime(message.createdAt);
+    const lines: string[] = [
+      "RELATORIO CLINICO - ASSISTENTE IA ODONTOLOGICO",
+      `Data: ${createdAt}`,
+      "",
+      `Resumo: ${message.report?.summary || message.text}`,
+      `Possivel diagnostico: ${message.report?.possibleDiagnosis || message.diagnosis || "Nao informado"}`,
+      `Urgencia: ${message.report?.urgency || "Nao informado"}`,
+      `Confianca estimada: ${message.report?.confidence || "Nao informado"}`,
+      "",
+      "Achados:",
+    ];
 
-    return {
-      text,
-      diagnosis: responsePayload.diagnosis,
-      annotatedImageUrl:
-        responsePayload.annotatedImageUrl || responsePayload.circledImageUrl,
-    };
+    if (message.findings?.length) {
+      message.findings.forEach((finding, index) => {
+        lines.push(
+          `${index + 1}. ${finding.label || "Achado"} - ${finding.note || "Alteracao visual identificada."}`
+        );
+      });
+    } else {
+      lines.push("Nenhum achado estrutural retornado.");
+    }
+
+    lines.push("");
+    lines.push("Recomendacoes:");
+    if (message.report?.recommendations?.length) {
+      message.report.recommendations.forEach((item, index) => {
+        lines.push(`${index + 1}. ${item}`);
+      });
+    } else {
+      lines.push("1. Correlacionar com exame clinico completo.");
+    }
+
+    lines.push("");
+    lines.push(
+      `Aviso: ${message.report?.disclaimer || "Este documento e apenas apoio a decisao clinica e nao substitui avaliacao profissional presencial."}`
+    );
+
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/plain;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `relatorio-ia-${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleSendMessage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSending || !hasPendingInput) return;
 
-    const userMessageId = `user-${Date.now()}`;
     const currentTime = new Date().toISOString();
+    const trimmedText = inputText.trim();
+    const userImageDataUrl = selectedFile
+      ? await readFileAsDataUrl(selectedFile).catch(() => "")
+      : "";
+
     const userMessage: ChatMessage = {
-      id: userMessageId,
+      id: `user-${Date.now()}`,
       sender: "user",
-      text: inputText.trim() || "Imagem enviada para análise.",
+      text: trimmedText || "Imagem enviada para análise.",
       createdAt: currentTime,
-      imageUrl: previewUrl || undefined,
+      imageUrl: userImageDataUrl || previewUrl || undefined,
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -133,7 +409,11 @@ const DentalAssistantChat: React.FC = () => {
     setIsSending(true);
 
     const body = new FormData();
-    body.append("message", inputText.trim());
+    body.append("message", trimmedText);
+    body.append("locale", "pt-BR");
+    body.append("includeAnnotatedImage", "true");
+    body.append("includeRegions", "true");
+    body.append("includeReport", "true");
     if (selectedFile) {
       body.append("image", selectedFile);
     }
@@ -155,7 +435,10 @@ const DentalAssistantChat: React.FC = () => {
       }
 
       const payload = (await response.json().catch(() => ({}))) as ChatApiResponse;
-      const assistantPayload = buildAssistantMessage(payload);
+      const assistantPayload = buildAssistantMessage(
+        payload,
+        userMessage.imageUrl || undefined
+      );
 
       setMessages((prev) => [
         ...prev,
@@ -166,6 +449,9 @@ const DentalAssistantChat: React.FC = () => {
           createdAt: new Date().toISOString(),
           diagnosis: assistantPayload.diagnosis,
           annotatedImageUrl: assistantPayload.annotatedImageUrl,
+          analysisImageUrl: assistantPayload.analysisImageUrl,
+          findings: assistantPayload.findings,
+          report: assistantPayload.report,
         },
       ]);
     } catch (error) {
@@ -191,8 +477,7 @@ const DentalAssistantChat: React.FC = () => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       if (hasPendingInput && !isSending) {
-        const form = event.currentTarget.form;
-        form?.requestSubmit();
+        event.currentTarget.form?.requestSubmit();
       }
     }
   };
@@ -200,17 +485,18 @@ const DentalAssistantChat: React.FC = () => {
   return (
     <>
       <PageMeta
-        title="Chat Dentista | Admin"
-        description="Assistente para análise de imagens odontológicas."
+        title="Assistente IA Odontológico | OdontoPro"
+        description="Análise de raio-x/fotos com marcação de achados e relatório clínico."
       />
       <section className="mx-auto w-full max-w-6xl">
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Chat Dentista
+              Assistente IA Odontológico
             </h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Fluxo para enviar raio-x e fotos de medicamentos e receber análise inicial.
+              Envie imagens clínicas para receber análise, área suspeita
+              destacada e relatório para apoio ao laudo.
             </p>
           </div>
 
@@ -230,9 +516,9 @@ const DentalAssistantChat: React.FC = () => {
                         : "border-gray-200 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                    <p className="whitespace-pre-wrap text-sm">{message.text}</p>
 
-                    {message.imageUrl && (
+                    {message.imageUrl && message.sender === "user" && (
                       <div className="mt-3">
                         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                           Imagem enviada
@@ -245,23 +531,75 @@ const DentalAssistantChat: React.FC = () => {
                       </div>
                     )}
 
-                    {message.annotatedImageUrl && (
-                      <div className="mt-3">
-                        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                          Imagem anotada
-                        </p>
-                        <img
-                          src={message.annotatedImageUrl}
-                          alt="Imagem anotada com destaque"
-                          className="max-h-80 w-auto rounded-lg border border-gray-200 object-contain dark:border-gray-700"
-                        />
-                      </div>
+                    {message.sender === "assistant" && (
+                      <DiagnosticImagePanel
+                        imageUrl={message.analysisImageUrl}
+                        annotatedImageUrl={message.annotatedImageUrl}
+                        findings={message.findings}
+                      />
                     )}
 
                     {message.diagnosis && (
                       <div className="mt-3 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-sm text-warning-800 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-300">
                         <span className="font-medium">Possível diagnóstico:</span>{" "}
                         {message.diagnosis}
+                      </div>
+                    )}
+
+                    {message.report && (
+                      <div className="mt-3 rounded-lg border border-brand-200 bg-brand-50/70 px-3 py-3 dark:border-brand-700/40 dark:bg-brand-500/10">
+                        <h2 className="text-sm font-semibold text-brand-900 dark:text-brand-200">
+                          Relatório clínico preliminar
+                        </h2>
+                        {message.report.summary && (
+                          <p className="mt-2 text-sm text-gray-700 dark:text-gray-200">
+                            <span className="font-medium">Resumo:</span>{" "}
+                            {message.report.summary}
+                          </p>
+                        )}
+                        {message.report.possibleDiagnosis && (
+                          <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">
+                            <span className="font-medium">Hipótese:</span>{" "}
+                            {message.report.possibleDiagnosis}
+                          </p>
+                        )}
+                        {(message.report.urgency || message.report.confidence) && (
+                          <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">
+                            {message.report.urgency && (
+                              <>
+                                <span className="font-medium">Urgência:</span>{" "}
+                                {message.report.urgency}
+                              </>
+                            )}{" "}
+                            {message.report.confidence && (
+                              <>
+                                <span className="font-medium">Confiabilidade:</span>{" "}
+                                {message.report.confidence}
+                              </>
+                            )}
+                          </p>
+                        )}
+                        {message.report.recommendations &&
+                          message.report.recommendations.length > 0 && (
+                            <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
+                              <p className="font-medium">Recomendações:</p>
+                              {message.report.recommendations.map((item, index) => (
+                                <p key={`${message.id}-rec-${index + 1}`}>
+                                  {index + 1}. {item}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                          {message.report.disclaimer}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => downloadReport(message)}
+                          className="mt-3 rounded-lg border border-brand-300 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100 dark:border-brand-600 dark:text-brand-300 dark:hover:bg-brand-500/20"
+                        >
+                          Baixar relatório (.txt)
+                        </button>
                       </div>
                     )}
 
@@ -293,7 +631,7 @@ const DentalAssistantChat: React.FC = () => {
                         {selectedFile?.name}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Imagem pronta para envio
+                        Imagem pronta para análise IA
                       </p>
                     </div>
                   </div>
@@ -327,7 +665,7 @@ const DentalAssistantChat: React.FC = () => {
                   value={inputText}
                   onKeyDown={handleTextareaKeyDown}
                   onChange={(event) => setInputText(event.target.value)}
-                  placeholder="Escreva a observação clínica ou contexto do caso..."
+                  placeholder="Ex.: dor no 36, suspeita de cárie proximal; paciente relata sensibilidade ao frio."
                   className="dark:bg-dark-900 min-h-[44px] flex-1 resize-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                 />
                 <button
@@ -335,11 +673,12 @@ const DentalAssistantChat: React.FC = () => {
                   disabled={!hasPendingInput || isSending}
                   className="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-300"
                 >
-                  {isSending ? "Enviando..." : "Enviar"}
+                  {isSending ? "Analisando..." : "Analisar"}
                 </button>
               </form>
               <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Enter envia mensagem. Shift + Enter cria nova linha.
+                Enter envia. Shift + Enter quebra linha. A IA retorna análise
+                preliminar para apoio clínico.
               </p>
             </div>
           </div>
