@@ -7,6 +7,7 @@ import {
   CalenderIcon,
   ChatIcon,
   ChevronDownIcon,
+  DocsIcon,
   GridIcon,
   HorizontaLDots,
   ListIcon,
@@ -41,6 +42,11 @@ const navItems: NavItem[] = [
     icon: <ChatIcon />,
     name: "Chat Dentista",
     path: "/chat-dentista",
+  },
+  {
+    icon: <DocsIcon />,
+    name: "Laudos",
+    path: "/laudos-odontologicos",
   },
   {
     icon: <UserCircleIcon />,

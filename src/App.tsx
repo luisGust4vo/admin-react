@@ -13,6 +13,7 @@ import LineChart from "./pages/Charts/LineChart";
 import BarChart from "./pages/Charts/BarChart";
 import Calendar from "./pages/Calendar";
 import DentalAssistantChat from "./pages/DentalAssistantChat";
+import DentalReports from "./pages/DentalReports";
 import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
@@ -34,6 +35,7 @@ export default function App() {
             <Route path="/profile" element={<UserProfiles />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/chat-dentista" element={<DentalAssistantChat />} />
+            <Route path="/laudos-odontologicos" element={<DentalReports />} />
             <Route path="/blank" element={<Blank />} />
 
             {/* Forms */}
