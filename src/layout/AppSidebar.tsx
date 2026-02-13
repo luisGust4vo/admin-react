@@ -13,6 +13,7 @@ import {
   HorizontaLDots,
   ListIcon,
   MailIcon,
+  PencilIcon,
   PageIcon,
   PieChartIcon,
   PlugInIcon,
@@ -65,6 +66,11 @@ const navItems: NavItem[] = [
     icon: <UserIcon />,
     name: "Prontuário",
     path: "/prontuario-inteligente",
+  },
+  {
+    icon: <PencilIcon />,
+    name: "Odontograma",
+    path: "/odontograma",
   },
   {
     icon: <UserCircleIcon />,
