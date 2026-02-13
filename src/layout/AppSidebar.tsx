@@ -12,6 +12,7 @@ import {
   GridIcon,
   HorizontaLDots,
   ListIcon,
+  MailIcon,
   PageIcon,
   PieChartIcon,
   PlugInIcon,
@@ -53,6 +54,11 @@ const navItems: NavItem[] = [
     icon: <DollarLineIcon />,
     name: "Controle de Gastos",
     path: "/controle-gastos",
+  },
+  {
+    icon: <MailIcon />,
+    name: "Central Anti-Faltas",
+    path: "/central-anti-faltas",
   },
   {
     icon: <UserCircleIcon />,

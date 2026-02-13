@@ -15,6 +15,7 @@ import Calendar from "./pages/Calendar";
 import DentalAssistantChat from "./pages/DentalAssistantChat";
 import DentalReports from "./pages/DentalReports";
 import ClinicExpenseControl from "./pages/ClinicExpenseControl";
+import RetentionCenter from "./pages/RetentionCenter";
 import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
@@ -41,6 +42,7 @@ export default function App() {
               path="/controle-gastos"
               element={<ClinicExpenseControl />}
             />
+            <Route path="/central-anti-faltas" element={<RetentionCenter />} />
             <Route path="/blank" element={<Blank />} />
 
             {/* Forms */}
