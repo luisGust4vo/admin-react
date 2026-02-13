@@ -18,9 +18,28 @@ type ToothSelection = {
   type: string;
 };
 
+type SurfaceKey = "oclusal" | "mesial" | "distal" | "vestibular" | "lingual";
+type SurfaceStatus =
+  | "saudavel"
+  | "carie"
+  | "restauracao"
+  | "endodontia"
+  | "ausente"
+  | "protese";
+
+type ToothClinicalDetail = {
+  overallStatus: "estavel" | "atencao" | "critico";
+  priority: "baixa" | "media" | "alta";
+  plannedProcedure: string;
+  estimatedCost: string;
+  notes: string;
+  surfaces: Record<SurfaceKey, SurfaceStatus>;
+};
+
 type OdontogramResponse = {
   selectedTeeth?: string[];
   toothNotes?: Record<string, string>;
+  toothDetails?: Record<string, Partial<ToothClinicalDetail>>;
 };
 
 const resolveOdontogramApiUrl = () => {
@@ -48,10 +67,45 @@ const patients: OdontogramPatient[] = [
   { id: "p3", name: "Eduarda Nogueira" },
 ];
 
+const defaultToothDetail = (): ToothClinicalDetail => ({
+  overallStatus: "estavel",
+  priority: "baixa",
+  plannedProcedure: "",
+  estimatedCost: "",
+  notes: "",
+  surfaces: {
+    oclusal: "saudavel",
+    mesial: "saudavel",
+    distal: "saudavel",
+    vestibular: "saudavel",
+    lingual: "saudavel",
+  },
+});
+
+const surfaceLabel: Record<SurfaceKey, string> = {
+  oclusal: "Oclusal",
+  mesial: "Mesial",
+  distal: "Distal",
+  vestibular: "Vestibular",
+  lingual: "Lingual",
+};
+
+const surfaceStatusLabel: Record<SurfaceStatus, string> = {
+  saudavel: "Saudável",
+  carie: "Cárie",
+  restauracao: "Restauração",
+  endodontia: "Endodontia",
+  ausente: "Ausente",
+  protese: "Prótese",
+};
+
 const Odontogram: React.FC = () => {
   const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || "");
   const [selectedTeeth, setSelectedTeeth] = useState<ToothSelection[]>([]);
   const [toothNotes, setToothNotes] = useState<Record<string, string>>({});
+  const [toothDetails, setToothDetails] = useState<
+    Record<string, ToothClinicalDetail>
+  >({});
   const [activeToothId, setActiveToothId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -92,6 +146,20 @@ const Odontogram: React.FC = () => {
         if (!cancelled) {
           setSelectedTeeth(hydrated);
           setToothNotes(payload.toothNotes || {});
+          const incomingDetails = payload.toothDetails || {};
+          const normalizedDetails: Record<string, ToothClinicalDetail> = {};
+          Object.entries(incomingDetails).forEach(([toothId, detail]) => {
+            normalizedDetails[toothId] = {
+              ...defaultToothDetail(),
+              ...detail,
+              surfaces: {
+                ...defaultToothDetail().surfaces,
+                ...(detail?.surfaces || {}),
+              },
+              notes: detail?.notes || payload.toothNotes?.[toothId] || "",
+            };
+          });
+          setToothDetails(normalizedDetails);
           setActiveToothId(hydrated[0]?.id || "");
         }
       } catch (error) {
@@ -99,6 +167,7 @@ const Odontogram: React.FC = () => {
         if (!cancelled) {
           setSelectedTeeth([]);
           setToothNotes({});
+          setToothDetails({});
           setActiveToothId("");
           setErrorMessage(
             "Não foi possível carregar do backend. Você pode editar localmente."
@@ -121,10 +190,53 @@ const Odontogram: React.FC = () => {
     [selectedTeeth, activeToothId]
   );
 
+  const activeDetail = useMemo(() => {
+    if (!selectedTooth) return null;
+    return toothDetails[selectedTooth.id] || defaultToothDetail();
+  }, [selectedTooth, toothDetails]);
+
   const selectedTeethIds = useMemo(
     () => selectedTeeth.map((tooth) => tooth.id),
     [selectedTeeth]
   );
+
+  const overallStats = useMemo(() => {
+    const total = selectedTeethIds.length;
+    let estavel = 0;
+    let atencao = 0;
+    let critico = 0;
+
+    selectedTeethIds.forEach((toothId) => {
+      const status = toothDetails[toothId]?.overallStatus || "estavel";
+      if (status === "estavel") estavel += 1;
+      if (status === "atencao") atencao += 1;
+      if (status === "critico") critico += 1;
+    });
+    return { total, estavel, atencao, critico };
+  }, [selectedTeethIds, toothDetails]);
+
+  const syncDetailsWithSelection = (teethList: ToothSelection[]) => {
+    setToothDetails((prev) => {
+      const next = { ...prev };
+      teethList.forEach((tooth) => {
+        if (!next[tooth.id]) {
+          next[tooth.id] = defaultToothDetail();
+        }
+      });
+      return next;
+    });
+  };
+
+  const updateActiveToothDetail = (patch: Partial<ToothClinicalDetail>) => {
+    if (!selectedTooth) return;
+    setToothDetails((prev) => ({
+      ...prev,
+      [selectedTooth.id]: {
+        ...(prev[selectedTooth.id] || defaultToothDetail()),
+        ...patch,
+      },
+    }));
+  };
 
   const saveOdontogram = async () => {
     if (!selectedPatientId || isSaving) return;
@@ -145,6 +257,7 @@ const Odontogram: React.FC = () => {
             patientId: selectedPatientId,
             selectedTeeth: selectedTeethIds,
             toothNotes,
+            toothDetails,
           }),
         }
       );
@@ -233,9 +346,11 @@ const Odontogram: React.FC = () => {
                   key={selectedPatientId}
                   defaultSelected={selectedTeethIds}
                   onChange={(teeth) => {
-                    setSelectedTeeth(teeth as ToothSelection[]);
-                    if (teeth.length && !activeToothId) {
-                      setActiveToothId(teeth[0].id);
+                    const parsedTeeth = teeth as ToothSelection[];
+                    setSelectedTeeth(parsedTeeth);
+                    syncDetailsWithSelection(parsedTeeth);
+                    if (parsedTeeth.length && !activeToothId) {
+                      setActiveToothId(parsedTeeth[0].id);
                     }
                   }}
                   theme="light"
@@ -259,6 +374,12 @@ const Odontogram: React.FC = () => {
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">
                 Dentes selecionados
               </h2>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <span>Total: {overallStats.total}</span>
+                <span>Estável: {overallStats.estavel}</span>
+                <span>Atenção: {overallStats.atencao}</span>
+                <span>Crítico: {overallStats.critico}</span>
+              </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {selectedTeeth.map((tooth) => (
                   <button
@@ -284,9 +405,9 @@ const Odontogram: React.FC = () => {
 
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                Nota por dente
+                Detalhes clínicos por dente
               </h2>
-              {selectedTooth ? (
+              {selectedTooth && activeDetail ? (
                 <div className="mt-3 space-y-3">
                   <p className="text-sm text-gray-600 dark:text-gray-300">
                     Dente ativo:{" "}
@@ -294,15 +415,103 @@ const Odontogram: React.FC = () => {
                       {selectedTooth.notations.fdi || selectedTooth.id}
                     </span>
                   </p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <select
+                      value={activeDetail.overallStatus}
+                      onChange={(event) =>
+                        updateActiveToothDetail({
+                          overallStatus: event.target.value as ToothClinicalDetail["overallStatus"],
+                        })
+                      }
+                      className="h-10 rounded-lg border border-gray-300 bg-transparent px-3 text-sm dark:border-gray-700"
+                    >
+                      <option value="estavel">Status: Estável</option>
+                      <option value="atencao">Status: Atenção</option>
+                      <option value="critico">Status: Crítico</option>
+                    </select>
+                    <select
+                      value={activeDetail.priority}
+                      onChange={(event) =>
+                        updateActiveToothDetail({
+                          priority: event.target.value as ToothClinicalDetail["priority"],
+                        })
+                      }
+                      className="h-10 rounded-lg border border-gray-300 bg-transparent px-3 text-sm dark:border-gray-700"
+                    >
+                      <option value="baixa">Prioridade: Baixa</option>
+                      <option value="media">Prioridade: Média</option>
+                      <option value="alta">Prioridade: Alta</option>
+                    </select>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={activeDetail.plannedProcedure}
+                    onChange={(event) =>
+                      updateActiveToothDetail({
+                        plannedProcedure: event.target.value,
+                      })
+                    }
+                    placeholder="Procedimento planejado"
+                    className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm dark:border-gray-700"
+                  />
+                  <input
+                    type="text"
+                    value={activeDetail.estimatedCost}
+                    onChange={(event) =>
+                      updateActiveToothDetail({
+                        estimatedCost: event.target.value,
+                      })
+                    }
+                    placeholder="Custo estimado (R$)"
+                    className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm dark:border-gray-700"
+                  />
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {(Object.keys(surfaceLabel) as SurfaceKey[]).map((surface) => (
+                      <div
+                        key={surface}
+                        className="rounded-lg border border-gray-200 p-2 dark:border-gray-700"
+                      >
+                        <p className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">
+                          {surfaceLabel[surface]}
+                        </p>
+                        <select
+                          value={activeDetail.surfaces[surface]}
+                          onChange={(event) =>
+                            updateActiveToothDetail({
+                              surfaces: {
+                                ...activeDetail.surfaces,
+                                [surface]: event.target.value as SurfaceStatus,
+                              },
+                            })
+                          }
+                          className="h-8 w-full rounded border border-gray-300 bg-transparent px-2 text-xs dark:border-gray-700"
+                        >
+                          {(Object.keys(surfaceStatusLabel) as SurfaceStatus[]).map(
+                            (status) => (
+                              <option key={status} value={status}>
+                                {surfaceStatusLabel[status]}
+                              </option>
+                            )
+                          )}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+
                   <textarea
                     rows={4}
-                    value={toothNotes[selectedTooth.id] || ""}
-                    onChange={(event) =>
+                    value={activeDetail.notes}
+                    onChange={(event) => {
+                      const nextNote = event.target.value;
+                      updateActiveToothDetail({ notes: nextNote });
                       setToothNotes((prev) => ({
                         ...prev,
-                        [selectedTooth.id]: event.target.value,
-                      }))
-                    }
+                        [selectedTooth.id]: nextNote,
+                      }));
+                    }}
                     placeholder="Observação clínica deste dente"
                     className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm dark:border-gray-700"
                   />
