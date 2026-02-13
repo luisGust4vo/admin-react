@@ -16,6 +16,7 @@ import DentalAssistantChat from "./pages/DentalAssistantChat";
 import DentalReports from "./pages/DentalReports";
 import ClinicExpenseControl from "./pages/ClinicExpenseControl";
 import RetentionCenter from "./pages/RetentionCenter";
+import SmartRecords from "./pages/SmartRecords";
 import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
@@ -43,6 +44,7 @@ export default function App() {
               element={<ClinicExpenseControl />}
             />
             <Route path="/central-anti-faltas" element={<RetentionCenter />} />
+            <Route path="/prontuario-inteligente" element={<SmartRecords />} />
             <Route path="/blank" element={<Blank />} />
 
             {/* Forms */}

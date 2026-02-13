@@ -17,6 +17,7 @@ import {
   PieChartIcon,
   PlugInIcon,
   TableIcon,
+  UserIcon,
   UserCircleIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
@@ -59,6 +60,11 @@ const navItems: NavItem[] = [
     icon: <MailIcon />,
     name: "Central Anti-Faltas",
     path: "/central-anti-faltas",
+  },
+  {
+    icon: <UserIcon />,
+    name: "Prontuário",
+    path: "/prontuario-inteligente",
   },
   {
     icon: <UserCircleIcon />,
