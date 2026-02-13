@@ -413,8 +413,8 @@ const SmartRecords: React.FC = () => {
         description="Histórico clínico, anexos e plano de tratamento do paciente."
       />
 
-      <section className="space-y-6">
-        <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-linear-to-r from-slate-800 via-cyan-800 to-teal-700 p-6 text-white shadow-theme-xl dark:border-gray-800">
+      <section className="clinic-page">
+        <div className="clinic-hero bg-linear-to-r from-slate-800 via-cyan-800 to-teal-700 text-white">
           <div className="absolute -left-12 top-2 h-48 w-48 rounded-full bg-white/10 blur-2xl"></div>
           <div className="absolute -right-16 bottom-1 h-52 w-52 rounded-full bg-black/15 blur-2xl"></div>
           <div className="relative z-10">
@@ -501,7 +501,7 @@ const SmartRecords: React.FC = () => {
             {selectedPatient ? (
               <>
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                  <div className="clinic-surface p-4">
                     <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Paciente
                     </p>
@@ -509,7 +509,7 @@ const SmartRecords: React.FC = () => {
                       {selectedPatient.name}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                  <div className="clinic-surface p-4">
                     <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Próxima consulta
                     </p>
@@ -519,7 +519,7 @@ const SmartRecords: React.FC = () => {
                         : "Não agendada"}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                  <div className="clinic-surface p-4">
                     <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Itens pendentes
                     </p>
@@ -527,7 +527,7 @@ const SmartRecords: React.FC = () => {
                       {pendingTreatments}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                  <div className="clinic-surface p-4">
                     <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Valor plano
                     </p>

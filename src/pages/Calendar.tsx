@@ -280,56 +280,85 @@ const Calendar: React.FC = () => {
   return (
     <>
       <PageMeta
-        title="React.js Calendar Dashboard | TailAdmin - Next.js Admin Dashboard Template"
-        description="This is React.js Calendar Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
+        title="Agenda Clínica | OdontoPro"
+        description="Agenda odontológica com visão mensal, semanal e diária em português."
       />
-      <div className="rounded-2xl border  border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        {(apiError || isLoadingEvents) && (
-          <div className="px-6 pt-6">
-            {apiError && (
-              <div className="rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700 dark:border-error-500/40 dark:bg-error-500/10 dark:text-error-200">
-                {apiError}
-              </div>
-            )}
-            {isLoadingEvents && (
-              <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                Carregando eventos...
+      <section className="clinic-page">
+        <div className="clinic-hero bg-linear-to-r from-brand-700 via-cyan-700 to-teal-700 text-white">
+          <div className="absolute -left-10 top-6 h-44 w-44 rounded-full bg-white/15 blur-2xl"></div>
+          <div className="absolute -right-16 bottom-0 h-52 w-52 rounded-full bg-black/15 blur-2xl"></div>
+          <div className="relative z-10 grid gap-5 lg:grid-cols-12">
+            <div className="lg:col-span-8">
+              <span className="inline-flex rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/90">
+                Agenda Odontológica
+              </span>
+              <h1 className="mt-3 text-2xl font-semibold sm:text-3xl">
+                Organize consultas, encaixes e retornos clínicos.
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm text-white/90 sm:text-base">
+                Visual completo para recepção e equipe clínica acompanharem os
+                atendimentos em tempo real.
               </p>
-            )}
+            </div>
+            <div className="rounded-2xl border border-white/25 bg-white/10 p-4 backdrop-blur-sm lg:col-span-4">
+              <p className="text-xs uppercase tracking-wide text-white/80">
+                Visão rápida
+              </p>
+              <p className="mt-2 text-3xl font-semibold">{events.length}</p>
+              <p className="text-xs text-white/85">
+                eventos cadastrados no calendário
+              </p>
+            </div>
           </div>
-        )}
-        <div className="custom-calendar">
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            locale={ptBrLocale}
-            initialView="dayGridMonth"
-            headerToolbar={{
-              left: "prev,next addEventButton",
-              center: "title",
-              right: "dayGridMonth,timeGridWeek,timeGridDay",
-            }}
-            buttonText={{
-              today: "Hoje",
-              month: "Mês",
-              week: "Semana",
-              day: "Dia",
-            }}
-            events={events}
-            selectable={true}
-            select={handleDateSelect}
-            eventClick={handleEventClick}
-            eventContent={renderEventContent}
-            customButtons={{
-              addEventButton: {
-                text: "Adicionar evento +",
-                click: () => {
-                  resetModalFields();
-                  openModal();
+        </div>
+        <div className="clinic-surface overflow-hidden">
+          {(apiError || isLoadingEvents) && (
+            <div className="px-2 pb-5">
+              {apiError && (
+                <div className="rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700 dark:border-error-500/40 dark:bg-error-500/10 dark:text-error-200">
+                  {apiError}
+                </div>
+              )}
+              {isLoadingEvents && (
+                <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                  Carregando eventos...
+                </p>
+              )}
+            </div>
+          )}
+          <div className="custom-calendar">
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              locale={ptBrLocale}
+              initialView="dayGridMonth"
+              headerToolbar={{
+                left: "prev,next addEventButton",
+                center: "title",
+                right: "dayGridMonth,timeGridWeek,timeGridDay",
+              }}
+              buttonText={{
+                today: "Hoje",
+                month: "Mês",
+                week: "Semana",
+                day: "Dia",
+              }}
+              events={events}
+              selectable={true}
+              select={handleDateSelect}
+              eventClick={handleEventClick}
+              eventContent={renderEventContent}
+              customButtons={{
+                addEventButton: {
+                  text: "Adicionar evento +",
+                  click: () => {
+                    resetModalFields();
+                    openModal();
+                  },
                 },
-              },
-            }}
-          />
+              }}
+            />
+          </div>
         </div>
         <Modal
           isOpen={isOpen}
@@ -349,15 +378,15 @@ const Calendar: React.FC = () => {
             <div className="mt-8">
               <div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                    Título do evento
-                  </label>
-                  <input
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                  Título do evento
+                </label>
+                <input
                     id="event-title"
                     type="text"
                     value={eventTitle}
                     onChange={(e) => setEventTitle(e.target.value)}
-                    className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    className="clinic-input dark:bg-dark-900 h-11 w-full px-4 py-2.5 text-gray-800 shadow-theme-xs placeholder:text-gray-400 dark:text-white/90 dark:placeholder:text-white/30"
                   />
                 </div>
               </div>
@@ -412,7 +441,7 @@ const Calendar: React.FC = () => {
                     lang="pt-BR"
                     value={eventStartDate}
                     onChange={(e) => setEventStartDate(e.target.value)}
-                    className="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    className="clinic-input dark:bg-dark-900 h-11 w-full appearance-none bg-none px-4 py-2.5 pl-4 pr-11 text-gray-800 shadow-theme-xs placeholder:text-gray-400 dark:text-white/90 dark:placeholder:text-white/30"
                   />
                 </div>
               </div>
@@ -428,7 +457,7 @@ const Calendar: React.FC = () => {
                     lang="pt-BR"
                     value={eventEndDate}
                     onChange={(e) => setEventEndDate(e.target.value)}
-                    className="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    className="clinic-input dark:bg-dark-900 h-11 w-full appearance-none bg-none px-4 py-2.5 pl-4 pr-11 text-gray-800 shadow-theme-xs placeholder:text-gray-400 dark:text-white/90 dark:placeholder:text-white/30"
                   />
                 </div>
               </div>
@@ -456,7 +485,7 @@ const Calendar: React.FC = () => {
             </div>
           </div>
         </Modal>
-      </div>
+      </section>
     </>
   );
 };

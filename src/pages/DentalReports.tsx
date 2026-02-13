@@ -270,11 +270,28 @@ const DentalReports: React.FC = () => {
         description="Emissão e assinatura de laudos odontológicos."
       />
 
-      <section className="mx-auto w-full max-w-7xl">
-        <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      <section className="clinic-page mx-auto w-full max-w-7xl">
+        <div className="clinic-hero bg-linear-to-r from-slate-800 via-brand-900 to-cyan-800 text-white">
+          <div className="absolute -left-14 top-0 h-48 w-48 rounded-full bg-white/10 blur-2xl"></div>
+          <div className="absolute -right-10 bottom-0 h-56 w-56 rounded-full bg-brand-300/20 blur-2xl"></div>
+          <div className="relative z-10">
+            <span className="inline-flex rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/90">
+              Assinatura Digital
+            </span>
+            <h1 className="mt-3 text-2xl font-semibold sm:text-3xl">
+              Emissão de Laudo Odontológico
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm text-white/90 sm:text-base">
+              Estruture o documento clínico, assine digitalmente e registre o
+              laudo no backend com rastreabilidade.
+            </p>
+          </div>
+        </div>
+
+        <div className="clinic-surface">
           <div className="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Emissão de Laudo Odontológico
+              Formulário clínico estruturado
             </h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Preencha os dados clínicos e assine digitalmente para registrar o
@@ -295,7 +312,7 @@ const DentalReports: React.FC = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 p-4 dark:border-gray-800 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-gray-50/40 p-4 dark:border-gray-800 dark:bg-gray-900/20 sm:grid-cols-3">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-400">
                     Clínica
@@ -304,7 +321,7 @@ const DentalReports: React.FC = () => {
                     type="text"
                     value={formValues.clinicName}
                     onChange={setField("clinicName")}
-                    className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm dark:border-gray-700"
+                    className="clinic-input h-10 w-full"
                   />
                 </div>
                 <div>
@@ -315,7 +332,7 @@ const DentalReports: React.FC = () => {
                     type="text"
                     value={formValues.city}
                     onChange={setField("city")}
-                    className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm dark:border-gray-700"
+                    className="clinic-input h-10 w-full"
                   />
                 </div>
                 <div>
@@ -327,12 +344,12 @@ const DentalReports: React.FC = () => {
                     lang="pt-BR"
                     value={formValues.reportDate}
                     onChange={setField("reportDate")}
-                    className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm dark:border-gray-700"
+                    className="clinic-input h-10 w-full"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 p-4 dark:border-gray-800 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-gray-50/40 p-4 dark:border-gray-800 dark:bg-gray-900/20 sm:grid-cols-3">
                 <div className="sm:col-span-2">
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-400">
                     Paciente
@@ -341,7 +358,7 @@ const DentalReports: React.FC = () => {
                     type="text"
                     value={formValues.patientName}
                     onChange={setField("patientName")}
-                    className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm dark:border-gray-700"
+                    className="clinic-input h-10 w-full"
                     placeholder="Nome completo"
                   />
                 </div>
@@ -353,7 +370,7 @@ const DentalReports: React.FC = () => {
                     type="text"
                     value={formValues.patientDocument}
                     onChange={setField("patientDocument")}
-                    className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm dark:border-gray-700"
+                    className="clinic-input h-10 w-full"
                     placeholder="CPF/RG"
                   />
                 </div>
@@ -366,7 +383,7 @@ const DentalReports: React.FC = () => {
                     lang="pt-BR"
                     value={formValues.patientBirthDate}
                     onChange={setField("patientBirthDate")}
-                    className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm dark:border-gray-700"
+                    className="clinic-input h-10 w-full"
                   />
                 </div>
                 <div>
@@ -377,7 +394,7 @@ const DentalReports: React.FC = () => {
                     type="text"
                     value={formValues.dentistName}
                     onChange={setField("dentistName")}
-                    className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm dark:border-gray-700"
+                    className="clinic-input h-10 w-full"
                   />
                 </div>
                 <div>
@@ -388,13 +405,13 @@ const DentalReports: React.FC = () => {
                     type="text"
                     value={formValues.cro}
                     onChange={setField("cro")}
-                    className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm dark:border-gray-700"
+                    className="clinic-input h-10 w-full"
                     placeholder="UF-00000"
                   />
                 </div>
               </div>
 
-              <div className="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+              <div className="space-y-4 rounded-xl border border-gray-200 bg-gray-50/40 p-4 dark:border-gray-800 dark:bg-gray-900/20">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-400">
                     Anamnese
@@ -403,7 +420,7 @@ const DentalReports: React.FC = () => {
                     rows={3}
                     value={formValues.anamnesis}
                     onChange={setField("anamnesis")}
-                    className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm dark:border-gray-700"
+                    className="clinic-input w-full py-2"
                   />
                 </div>
                 <div>
@@ -414,7 +431,7 @@ const DentalReports: React.FC = () => {
                     rows={3}
                     value={formValues.clinicalFindings}
                     onChange={setField("clinicalFindings")}
-                    className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm dark:border-gray-700"
+                    className="clinic-input w-full py-2"
                   />
                 </div>
                 <div>
@@ -425,7 +442,7 @@ const DentalReports: React.FC = () => {
                     rows={3}
                     value={formValues.radiographicFindings}
                     onChange={setField("radiographicFindings")}
-                    className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm dark:border-gray-700"
+                    className="clinic-input w-full py-2"
                   />
                 </div>
                 <div>
@@ -436,7 +453,7 @@ const DentalReports: React.FC = () => {
                     rows={3}
                     value={formValues.diagnosticHypothesis}
                     onChange={setField("diagnosticHypothesis")}
-                    className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm dark:border-gray-700"
+                    className="clinic-input w-full py-2"
                     placeholder="Obrigatório"
                   />
                 </div>
@@ -448,7 +465,7 @@ const DentalReports: React.FC = () => {
                     rows={3}
                     value={formValues.treatmentPlan}
                     onChange={setField("treatmentPlan")}
-                    className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm dark:border-gray-700"
+                    className="clinic-input w-full py-2"
                   />
                 </div>
                 <div>
@@ -459,7 +476,7 @@ const DentalReports: React.FC = () => {
                     rows={3}
                     value={formValues.prescriptions}
                     onChange={setField("prescriptions")}
-                    className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm dark:border-gray-700"
+                    className="clinic-input w-full py-2"
                   />
                 </div>
                 <div>
@@ -470,7 +487,7 @@ const DentalReports: React.FC = () => {
                     rows={3}
                     value={formValues.recommendations}
                     onChange={setField("recommendations")}
-                    className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm dark:border-gray-700"
+                    className="clinic-input w-full py-2"
                   />
                 </div>
                 <div>
@@ -481,12 +498,12 @@ const DentalReports: React.FC = () => {
                     rows={2}
                     value={formValues.additionalNotes}
                     onChange={setField("additionalNotes")}
-                    className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm dark:border-gray-700"
+                    className="clinic-input w-full py-2"
                   />
                 </div>
               </div>
 
-              <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+              <div className="rounded-xl border border-gray-200 bg-gray-50/30 p-4 dark:border-gray-800 dark:bg-gray-900/20">
                 <div className="mb-2 flex items-center justify-between">
                   <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
                     Assinatura digital do dentista
@@ -536,7 +553,7 @@ const DentalReports: React.FC = () => {
             </form>
 
             <aside className="space-y-4 lg:col-span-4">
-              <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+              <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-4 dark:border-gray-800 dark:bg-gray-900/20">
                 <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
                   Pré-visualização do documento
                 </h2>
@@ -559,7 +576,7 @@ const DentalReports: React.FC = () => {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+              <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-4 dark:border-gray-800 dark:bg-gray-900/20">
                 <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
                   Status da assinatura
                 </h2>
@@ -570,7 +587,7 @@ const DentalReports: React.FC = () => {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+              <div className="rounded-xl border border-gray-200 bg-gray-50/40 p-4 dark:border-gray-800 dark:bg-gray-900/20">
                 <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
                   Registro do backend
                 </h2>

@@ -686,8 +686,8 @@ const RetentionCenter: React.FC = () => {
         description="Confirmações, lembretes e reativação de pacientes."
       />
 
-      <section className="space-y-6">
-        <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-linear-to-r from-blue-600 via-cyan-600 to-emerald-500 p-6 text-white shadow-theme-xl dark:border-gray-800">
+      <section className="clinic-page">
+        <div className="clinic-hero bg-linear-to-r from-blue-600 via-cyan-600 to-emerald-500 text-white">
           <div className="absolute -left-10 top-0 h-44 w-44 rounded-full bg-white/15 blur-2xl"></div>
           <div className="absolute -right-10 bottom-0 h-44 w-44 rounded-full bg-black/15 blur-2xl"></div>
           <div className="relative z-10">
@@ -722,13 +722,13 @@ const RetentionCenter: React.FC = () => {
         )}
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="clinic-surface">
             <p className="text-sm text-gray-500 dark:text-gray-400">Confirmadas</p>
             <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
               {confirmedCount}
             </p>
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="clinic-surface">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Aguardando confirmação
             </p>
@@ -736,13 +736,13 @@ const RetentionCenter: React.FC = () => {
               {pendingCount}
             </p>
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="clinic-surface">
             <p className="text-sm text-gray-500 dark:text-gray-400">Canceladas</p>
             <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
               {canceledCount}
             </p>
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="clinic-surface">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Taxa de ocupação
             </p>

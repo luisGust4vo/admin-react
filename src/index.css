@@ -265,6 +265,27 @@ layer(base);
 @utility menu-dropdown-badge-inactive {
   @apply bg-brand-50 group-hover:bg-brand-100 dark:bg-brand-500/15 dark:group-hover:bg-brand-500/20;
 }
+
+@utility clinic-page {
+  @apply relative space-y-6;
+}
+
+@utility clinic-hero {
+  @apply relative overflow-hidden rounded-3xl border border-gray-200 p-6 shadow-theme-xl dark:border-gray-800;
+}
+
+@utility clinic-surface {
+  @apply rounded-2xl border border-gray-200 bg-white/95 p-5 shadow-[0_14px_35px_-22px_rgba(7,45,47,0.45)] backdrop-blur-sm dark:border-gray-800 dark:bg-white/[0.03];
+}
+
+@utility clinic-input {
+  @apply rounded-lg border border-gray-300 bg-white/70 px-3 text-sm transition focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900;
+}
+
+@utility clinic-chip {
+  @apply inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300;
+}
+
 @utility no-scrollbar {
   /* Chrome, Safari and Opera */
   &::-webkit-scrollbar {

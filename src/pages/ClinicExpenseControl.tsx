@@ -505,8 +505,8 @@ const ClinicExpenseControl: React.FC = () => {
         title="Controle Financeiro | Clínica"
         description="Gestão completa de gastos da clínica odontológica."
       />
-      <section className="space-y-6">
-        <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-linear-to-r from-teal-600 via-cyan-600 to-orange-500 p-6 text-white shadow-theme-xl dark:border-gray-800">
+      <section className="clinic-page">
+        <div className="clinic-hero bg-linear-to-r from-teal-600 via-cyan-600 to-orange-500 text-white">
           <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl"></div>
           <div className="absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-black/10 blur-2xl"></div>
           <div className="relative z-10 grid gap-6 lg:grid-cols-12">
@@ -566,25 +566,25 @@ const ClinicExpenseControl: React.FC = () => {
         )}
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="clinic-surface">
             <p className="text-sm text-gray-500 dark:text-gray-400">Total pago</p>
             <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
               {formatCurrency(paidTotal)}
             </p>
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="clinic-surface">
             <p className="text-sm text-gray-500 dark:text-gray-400">Em aberto</p>
             <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
               {formatCurrency(pendingTotal)}
             </p>
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="clinic-surface">
             <p className="text-sm text-gray-500 dark:text-gray-400">Atrasado</p>
             <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
               {formatCurrency(overdueTotal)}
             </p>
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="clinic-surface">
             <p className="text-sm text-gray-500 dark:text-gray-400">Projeção mês</p>
             <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
               {formatCurrency(projectedTotal)}

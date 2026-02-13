@@ -488,11 +488,38 @@ const DentalAssistantChat: React.FC = () => {
         title="Assistente IA Odontológico | OdontoPro"
         description="Análise de raio-x/fotos com marcação de achados e relatório clínico."
       />
-      <section className="mx-auto w-full max-w-6xl">
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      <section className="clinic-page mx-auto w-full max-w-6xl">
+        <div className="clinic-hero bg-linear-to-r from-slate-800 via-cyan-800 to-brand-900 text-white">
+          <div className="absolute -left-14 top-2 h-48 w-48 rounded-full bg-white/10 blur-2xl"></div>
+          <div className="absolute -right-16 bottom-0 h-56 w-56 rounded-full bg-cyan-300/20 blur-2xl"></div>
+          <div className="relative z-10 grid gap-5 lg:grid-cols-12">
+            <div className="lg:col-span-8">
+              <span className="inline-flex rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/90">
+                Diagnóstico Assistido por IA
+              </span>
+              <h1 className="mt-3 text-2xl font-semibold sm:text-3xl">
+                Assistente IA Odontológico
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm text-white/90 sm:text-base">
+                Análise de raio-x e fotos clínicas com marcação de áreas
+                suspeitas, hipótese diagnóstica e relatório técnico.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm lg:col-span-4">
+              <p className="text-xs uppercase tracking-wide text-white/80">
+                Conversas na sessão
+              </p>
+              <p className="mt-2 text-3xl font-semibold">{messages.length}</p>
+              <p className="text-xs text-white/85">
+                histórico local desta avaliação
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_14px_35px_-22px_rgba(7,45,47,0.45)] dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Assistente IA Odontológico
+              Sala de análise clínica
             </h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Envie imagens clínicas para receber análise, área suspeita
@@ -519,7 +546,7 @@ const DentalAssistantChat: React.FC = () => {
                     className={`w-full max-w-3xl rounded-2xl border px-4 py-3 shadow-theme-xs ${
                       message.sender === "user"
                         ? "border-brand-200 bg-brand-50 text-gray-900 dark:border-brand-800/40 dark:bg-brand-500/10 dark:text-white"
-                        : "border-gray-200 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                        : "border-gray-200 bg-white/95 text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     }`}
                   >
                     <p className="whitespace-pre-wrap text-sm">{message.text}</p>
@@ -672,7 +699,7 @@ const DentalAssistantChat: React.FC = () => {
                   onKeyDown={handleTextareaKeyDown}
                   onChange={(event) => setInputText(event.target.value)}
                   placeholder="Ex.: dor no 36, suspeita de cárie proximal; paciente relata sensibilidade ao frio."
-                  className="dark:bg-dark-900 min-h-[44px] flex-1 resize-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  className="clinic-input dark:bg-dark-900 min-h-[44px] flex-1 resize-none px-4 py-2.5 text-gray-800 shadow-theme-xs placeholder:text-gray-400 dark:text-white/90 dark:placeholder:text-white/30"
                 />
                 <button
                   type="submit"
