@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router";
 
 // Assume these icons are imported from an icon library
 import {
-  BoxCubeIcon,
   CalenderIcon,
   ChatIcon,
   ChevronDownIcon,
@@ -11,13 +10,8 @@ import {
   DocsIcon,
   GridIcon,
   HorizontaLDots,
-  ListIcon,
   MailIcon,
   PencilIcon,
-  PageIcon,
-  PieChartIcon,
-  PlugInIcon,
-  TableIcon,
   UserIcon,
   UserCircleIcon,
 } from "../icons";
@@ -34,17 +28,17 @@ type NavItem = {
 const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
-    name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+    name: "Painel Clínico",
+    path: "/",
   },
   {
     icon: <CalenderIcon />,
-    name: "Calendar",
+    name: "Agenda",
     path: "/calendar",
   },
   {
     icon: <ChatIcon />,
-    name: "Chat Dentista",
+    name: "Assistente IA",
     path: "/chat-dentista",
   },
   {
@@ -54,17 +48,17 @@ const navItems: NavItem[] = [
   },
   {
     icon: <DollarLineIcon />,
-    name: "Controle de Gastos",
+    name: "Financeiro",
     path: "/controle-gastos",
   },
   {
     icon: <MailIcon />,
-    name: "Central Anti-Faltas",
+    name: "Retenção",
     path: "/central-anti-faltas",
   },
   {
     icon: <UserIcon />,
-    name: "Prontuário",
+    name: "Prontuários",
     path: "/prontuario-inteligente",
   },
   {
@@ -72,59 +66,13 @@ const navItems: NavItem[] = [
     name: "Odontograma",
     path: "/odontograma",
   },
-  {
-    icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
-  },
-  {
-    name: "Forms",
-    icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },
-  {
-    name: "Tables",
-    icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  },
-  {
-    name: "Pages",
-    icon: <PageIcon />,
-    subItems: [
-      { name: "Blank Page", path: "/blank", pro: false },
-      { name: "404 Error", path: "/error-404", pro: false },
-    ],
-  },
 ];
 
 const othersItems: NavItem[] = [
   {
-    icon: <PieChartIcon />,
-    name: "Charts",
-    subItems: [
-      { name: "Line Chart", path: "/line-chart", pro: false },
-      { name: "Bar Chart", path: "/bar-chart", pro: false },
-    ],
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "UI Elements",
-    subItems: [
-      { name: "Alerts", path: "/alerts", pro: false },
-      { name: "Avatar", path: "/avatars", pro: false },
-      { name: "Badge", path: "/badge", pro: false },
-      { name: "Buttons", path: "/buttons", pro: false },
-      { name: "Images", path: "/images", pro: false },
-      { name: "Videos", path: "/videos", pro: false },
-    ],
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Authentication",
-    subItems: [
-      { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
-    ],
+    icon: <UserCircleIcon />,
+    name: "Perfil da Clínica",
+    path: "/profile",
   },
 ];
 
@@ -339,31 +287,20 @@ const AppSidebar: React.FC = () => {
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
-        <Link to="/">
+        <Link to="/" className="block">
           {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <img
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <img
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
+            <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 dark:border-cyan-900/40 dark:bg-cyan-500/10">
+              <p className="text-sm font-semibold tracking-wide text-cyan-800 dark:text-cyan-300">
+                ODONTOPRO
+              </p>
+              <p className="text-[11px] text-cyan-700/90 dark:text-cyan-200/90">
+                Gestão de Consultório
+              </p>
+            </div>
           ) : (
-            <img
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 text-xs font-bold text-cyan-700 dark:border-cyan-900/40 dark:bg-cyan-500/10 dark:text-cyan-300">
+              OP
+            </div>
           )}
         </Link>
       </div>
@@ -379,7 +316,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Menu"
+                  "Módulos"
                 ) : (
                   <HorizontaLDots className="size-6" />
                 )}
@@ -395,7 +332,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
+                  "Conta"
                 ) : (
                   <HorizontaLDots />
                 )}

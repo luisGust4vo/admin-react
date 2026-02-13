@@ -6,8 +6,8 @@ export default function SignIn() {
   return (
     <>
       <PageMeta
-        title="React.js SignIn Dashboard | TailAdmin - Next.js Admin Dashboard Template"
-        description="This is React.js SignIn Tables Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
+        title="Entrar | OdontoPro"
+        description="Acesso à plataforma OdontoPro para gestão de consultórios odontológicos."
       />
       <AuthLayout>
         <SignInForm />

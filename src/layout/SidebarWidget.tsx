@@ -2,21 +2,20 @@ export default function SidebarWidget() {
   return (
     <div
       className={`
-        mx-auto mb-10 w-full max-w-60 rounded-2xl bg-gray-50 px-4 py-5 text-center dark:bg-white/[0.03]`}
+        mx-auto mb-10 w-full max-w-60 rounded-2xl border border-cyan-200/70 bg-linear-to-br from-cyan-50 to-emerald-50 px-4 py-5 text-left dark:border-cyan-900/40 dark:from-cyan-500/10 dark:to-emerald-500/10`}
     >
       <h3 className="mb-2 font-semibold text-gray-900 dark:text-white">
-        #1 Tailwind CSS Dashboard
+        OdontoPro Suite
       </h3>
-      <p className="mb-4 text-gray-500 text-theme-sm dark:text-gray-400">
-        Leading Tailwind CSS Admin Template with 400+ UI Component and Pages.
+      <p className="mb-4 text-gray-600 text-theme-sm dark:text-gray-300">
+        Plataforma clínica para gestão odontológica completa: agenda, laudos,
+        odontograma, retenção e financeiro.
       </p>
       <a
-        href="https://tailadmin.com/pricing"
-        target="_blank"
-        rel="nofollow"
-        className="flex items-center justify-center p-3 font-medium text-white rounded-lg bg-brand-500 text-theme-sm hover:bg-brand-600"
+        href="/"
+        className="flex items-center justify-center rounded-lg bg-cyan-600 p-3 font-medium text-white text-theme-sm hover:bg-cyan-700"
       >
-        Purchase Plan
+        Ver painel executivo
       </a>
     </div>
   );
