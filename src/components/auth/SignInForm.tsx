@@ -116,10 +116,13 @@ export default function SignInForm() {
           payload.data?.accessToken;
         const user = payload.user || payload.data?.user;
 
-        const storage = isChecked ? localStorage : sessionStorage;
-        if (token) {
-          storage.setItem("odonto_auth_token", token);
+        if (!token) {
+          lastErrorMessage = "Resposta de login sem token de acesso.";
+          continue;
         }
+
+        const storage = isChecked ? localStorage : sessionStorage;
+        storage.setItem("odonto_auth_token", token);
         if (user) {
           storage.setItem("odonto_auth_user", JSON.stringify(user));
         }
