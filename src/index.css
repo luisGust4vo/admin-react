@@ -586,11 +586,14 @@ span.flatpickr-weekday,
   }
 }
 
-.fc .fc-view-harness {
-  @apply max-w-full overflow-x-auto custom-scrollbar;
+.custom-calendar {
+  @apply w-full overflow-x-auto;
 }
-.fc-dayGridMonth-view.fc-view.fc-daygrid {
-  @apply min-w-[718px];
+.custom-calendar .fc {
+  @apply min-w-[860px] lg:min-w-0;
+}
+.fc .fc-view-harness {
+  @apply max-w-full;
 }
 .fc .fc-scrollgrid-section > * {
   border-right-width: 0;
@@ -654,16 +657,22 @@ span.flatpickr-weekday,
   @apply !px-5 !py-4 text-sm font-medium uppercase text-gray-400;
 }
 .fc .fc-daygrid-day.fc-day-today {
-  @apply bg-transparent;
+  @apply bg-cyan-50/35 dark:bg-cyan-500/5;
 }
 .fc .fc-daygrid-day {
   @apply p-2;
 }
 .fc .fc-daygrid-day.fc-day-today .fc-scrollgrid-sync-inner {
-  @apply rounded-sm bg-gray-100 dark:bg-white/[0.03];
+  @apply rounded-sm bg-cyan-100/40 dark:bg-cyan-500/8;
+}
+.fc .fc-timegrid-col.fc-day-today {
+  @apply bg-cyan-50/30 dark:bg-cyan-500/5;
 }
 .fc .fc-daygrid-day-number {
   @apply !p-3 text-sm font-medium text-gray-700 dark:text-gray-400;
+}
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  @apply text-cyan-700 dark:text-cyan-300;
 }
 .fc .fc-daygrid-day-top {
   @apply !flex-row;
@@ -674,44 +683,48 @@ span.flatpickr-weekday,
 .fc .fc-day-other .fc-daygrid-day-top .fc-daygrid-day-number {
   @apply text-gray-400 dark:text-white/30;
 }
-.event-fc-color {
-  @apply rounded-lg py-2.5 pl-4 pr-3;
+.fc .fc-daygrid-day.fc-day-disabled-past,
+.fc .fc-timegrid-col.fc-day-disabled-past {
+  @apply bg-gray-100/70 dark:bg-gray-900/50;
 }
-.event-fc-color .fc-event-title {
-  @apply p-0 text-sm font-normal text-gray-700;
+.fc .fc-daygrid-day.fc-day-disabled-past .fc-daygrid-day-number,
+.fc .fc-timegrid-col.fc-day-disabled-past .fc-col-header-cell-cushion {
+  @apply text-gray-400 dark:text-gray-500;
 }
-.fc-daygrid-event-dot {
-  @apply w-1 h-5 ml-0 mr-3 border-none rounded-sm;
+.fc .fc-daygrid-day.fc-day-disabled-past {
+  @apply cursor-not-allowed;
 }
 .fc-event {
   @apply focus:shadow-none;
 }
-.fc-daygrid-event.fc-event-start {
-  @apply !ml-3;
+.fc .fc-h-event.event-fc-color,
+.fc .fc-timegrid-event.event-fc-color {
+  @apply rounded-md border px-2 py-1;
 }
-.event-fc-color.fc-bg-success {
-  @apply border-success-50 bg-success-50;
+.fc .event-fc-color .fc-event-title,
+.fc .event-fc-color .fc-event-time {
+  @apply text-[11px] leading-4 text-gray-700 dark:text-gray-200;
 }
-.event-fc-color.fc-bg-danger {
-  @apply border-error-50 bg-error-50;
+.fc .fc-timegrid-event.event-fc-color .fc-event-main {
+  @apply px-1 py-0.5;
 }
-.event-fc-color.fc-bg-primary {
-  @apply border-brand-50 bg-brand-50;
+.fc .fc-timegrid-event.event-fc-color .fc-event-title {
+  @apply truncate;
 }
-.event-fc-color.fc-bg-warning {
-  @apply border-orange-50 bg-orange-50;
+.fc .fc-timegrid-event .fc-event-time {
+  @apply font-medium;
 }
-.event-fc-color.fc-bg-success .fc-daygrid-event-dot {
-  @apply bg-success-500;
+.fc .event-fc-color.fc-bg-success {
+  @apply border-success-200 bg-success-50;
 }
-.event-fc-color.fc-bg-danger .fc-daygrid-event-dot {
-  @apply bg-error-500;
+.fc .event-fc-color.fc-bg-danger {
+  @apply border-error-200 bg-error-50;
 }
-.event-fc-color.fc-bg-primary .fc-daygrid-event-dot {
-  @apply bg-brand-500;
+.fc .event-fc-color.fc-bg-primary {
+  @apply border-brand-200 bg-brand-50;
 }
-.event-fc-color.fc-bg-warning .fc-daygrid-event-dot {
-  @apply bg-orange-500;
+.fc .event-fc-color.fc-bg-warning {
+  @apply border-warning-200 bg-warning-50;
 }
 .fc-direction-ltr .fc-timegrid-slot-label-frame {
   @apply px-3 py-1.5 text-left text-sm font-medium text-gray-500 dark:text-gray-400;
@@ -804,10 +817,10 @@ span.flatpickr-weekday,
 .custom-calendar .fc-h-event {
   background-color: transparent;
   border: none;
-  color: black;
+  color: inherit;
 }
 .fc.fc-media-screen {
-  @apply min-h-screen;
+  min-height: 0;
 }
 
 .simplebar-scrollbar::before {

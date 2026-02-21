@@ -1,9 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import { useCallback, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { EventInput, DateSelectArg, EventClickArg } from "@fullcalendar/core";
+import {
+  DatesSetArg,
+  EventInput,
+  DateSelectArg,
+  EventClickArg,
+} from "@fullcalendar/core";
 import ptBrLocale from "@fullcalendar/core/locales/pt-br";
 import { Modal } from "../components/ui/modal";
 import { useModal } from "../hooks/useModal";
@@ -15,7 +20,7 @@ interface CalendarEvent extends EventInput {
   start: string;
   end?: string;
   extendedProps: {
-    calendar: string;
+    calendar: "primary" | "danger" | "success" | "warning";
   };
 }
 
@@ -29,6 +34,11 @@ type ApiCalendarEvent = {
   extendedProps?: {
     calendar?: string;
   };
+};
+
+type CalendarRange = {
+  start: string;
+  end: string;
 };
 
 const resolveCalendarApiUrl = () => {
@@ -50,10 +60,52 @@ const resolveCalendarApiUrl = () => {
 
 const CALENDAR_API_URL = resolveCalendarApiUrl();
 
-const normalizeDate = (value?: string | Date | null) => {
+const normalizeDateTimeLocal = (value?: string | Date | null) => {
   if (!value) return "";
-  if (value instanceof Date) return value.toISOString().split("T")[0];
-  return value.split("T")[0];
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  const hour = `${date.getHours()}`.padStart(2, "0");
+  const minute = `${date.getMinutes()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+};
+
+const toApiDateTime = (value: string) => `${value}:00`;
+
+const getStartOfToday = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+};
+
+const isPastCalendarDate = (date: Date) => {
+  const dateOnly = new Date(date);
+  dateOnly.setHours(0, 0, 0, 0);
+  return dateOnly < getStartOfToday();
+};
+
+const normalizeCalendarLevel = (
+  value?: string
+): "primary" | "danger" | "success" | "warning" => {
+  const normalized = (value ?? "").toLowerCase();
+  if (
+    normalized === "primary" ||
+    normalized === "danger" ||
+    normalized === "success" ||
+    normalized === "warning"
+  ) {
+    return normalized;
+  }
+
+  if (normalized === "atencao") return "warning";
+  if (normalized === "urgente") return "danger";
+  if (normalized === "confirmado") return "success";
+  return "primary";
 };
 
 const normalizeEventFromApi = (event: ApiCalendarEvent): CalendarEvent | null => {
@@ -62,11 +114,13 @@ const normalizeEventFromApi = (event: ApiCalendarEvent): CalendarEvent | null =>
   return {
     id: String(event.id),
     title: event.title,
-    start: normalizeDate(event.start),
-    end: normalizeDate(event.end ?? undefined) || undefined,
-    allDay: event.allDay ?? true,
+    start: event.start,
+    end: event.end ?? undefined,
+    allDay: event.allDay ?? false,
     extendedProps: {
-      calendar: event.extendedProps?.calendar ?? event.calendar ?? "Primary",
+      calendar: normalizeCalendarLevel(
+        event.extendedProps?.calendar ?? event.calendar
+      ),
     },
   };
 };
@@ -76,9 +130,12 @@ const Calendar: React.FC = () => {
     null
   );
   const [eventTitle, setEventTitle] = useState("");
-  const [eventStartDate, setEventStartDate] = useState("");
-  const [eventEndDate, setEventEndDate] = useState("");
-  const [eventLevel, setEventLevel] = useState("Primary");
+  const [eventStartDateTime, setEventStartDateTime] = useState("");
+  const [eventEndDateTime, setEventEndDateTime] = useState("");
+  const [eventLevel, setEventLevel] = useState<
+    "primary" | "danger" | "success" | "warning"
+  >("primary");
+  const [visibleRange, setVisibleRange] = useState<CalendarRange | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
@@ -86,69 +143,79 @@ const Calendar: React.FC = () => {
   const calendarRef = useRef<FullCalendar>(null);
   const { isOpen, openModal, closeModal } = useModal();
 
-  const calendarsEvents = {
-    Danger: "danger",
-    Success: "success",
-    Primary: "primary",
-    Warning: "warning",
-  };
+  const calendarsEvents: Array<{
+    label: string;
+    value: "primary" | "danger" | "success" | "warning";
+  }> = [
+    { label: "Padrão", value: "primary" },
+    { label: "Urgente", value: "danger" },
+    { label: "Confirmado", value: "success" },
+    { label: "Atenção", value: "warning" },
+  ];
 
-  useEffect(() => {
-    let isCancelled = false;
+  const loadEvents = useCallback(async (range?: CalendarRange | null) => {
+    setIsLoadingEvents(true);
+    setApiError(null);
 
-    const loadEvents = async () => {
-      setIsLoadingEvents(true);
-      setApiError(null);
-
-      try {
-        const response = await fetch(CALENDAR_API_URL, {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to load events: ${response.status}`);
-        }
-
-        const payload = await response.json().catch(() => []);
-        const rawEvents: ApiCalendarEvent[] = Array.isArray(payload)
-          ? (payload as ApiCalendarEvent[])
-          : Array.isArray(payload?.events)
-            ? (payload.events as ApiCalendarEvent[])
-            : [];
-
-        const normalizedEvents = rawEvents
-          .map((event: ApiCalendarEvent) => normalizeEventFromApi(event))
-          .filter((event): event is CalendarEvent => Boolean(event));
-
-        if (!isCancelled) {
-          setEvents(normalizedEvents);
-        }
-      } catch (error) {
-        console.error("Calendar load failed:", error);
-        if (!isCancelled) {
-          setApiError("Não foi possível carregar os eventos do backend.");
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoadingEvents(false);
-        }
+    try {
+      const requestUrl = new URL(CALENDAR_API_URL, window.location.origin);
+      if (range?.start && range?.end) {
+        requestUrl.searchParams.set("start", range.start);
+        requestUrl.searchParams.set("end", range.end);
       }
-    };
+      requestUrl.searchParams.set("limit", "500");
 
-    loadEvents();
+      const response = await fetch(requestUrl.toString(), {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
 
-    return () => {
-      isCancelled = true;
-    };
+      if (!response.ok) {
+        throw new Error(`Failed to load events: ${response.status}`);
+      }
+
+      const payload = await response.json().catch(() => []);
+      const rawEvents: ApiCalendarEvent[] = Array.isArray(payload)
+        ? (payload as ApiCalendarEvent[])
+        : Array.isArray(payload?.events)
+          ? (payload.events as ApiCalendarEvent[])
+          : [];
+
+      const normalizedEvents = rawEvents
+        .map((event: ApiCalendarEvent) => normalizeEventFromApi(event))
+        .filter((event): event is CalendarEvent => Boolean(event));
+
+      setEvents(normalizedEvents);
+    } catch (error) {
+      console.error("Calendar load failed:", error);
+      setApiError("Não foi possível carregar os eventos do backend.");
+    } finally {
+      setIsLoadingEvents(false);
+    }
   }, []);
 
+  const handleDatesSet = (dateInfo: DatesSetArg) => {
+    const nextRange = {
+      start: dateInfo.start.toISOString(),
+      end: dateInfo.end.toISOString(),
+    };
+    setVisibleRange(nextRange);
+    void loadEvents(nextRange);
+  };
+
   const handleDateSelect = (selectInfo: DateSelectArg) => {
+    if (isPastCalendarDate(selectInfo.start)) {
+      setApiError("Não é possível agendar em dias que já passaram.");
+      return;
+    }
+
     resetModalFields();
-    setEventStartDate(selectInfo.startStr);
-    setEventEndDate(selectInfo.endStr || selectInfo.startStr);
+    setEventStartDateTime(normalizeDateTimeLocal(selectInfo.start));
+    setEventEndDateTime(
+      normalizeDateTimeLocal(selectInfo.end || selectInfo.start)
+    );
     openModal();
   };
 
@@ -157,17 +224,17 @@ const Calendar: React.FC = () => {
     setSelectedEvent({
       id: String(event.id),
       title: event.title,
-      start: normalizeDate(event.start),
-      end: normalizeDate(event.end) || undefined,
+      start: normalizeDateTimeLocal(event.start),
+      end: normalizeDateTimeLocal(event.end) || undefined,
       allDay: event.allDay,
       extendedProps: {
-        calendar: event.extendedProps.calendar ?? "Primary",
+        calendar: normalizeCalendarLevel(event.extendedProps.calendar),
       },
     });
     setEventTitle(event.title);
-    setEventStartDate(normalizeDate(event.start));
-    setEventEndDate(normalizeDate(event.end));
-    setEventLevel(event.extendedProps.calendar ?? "Primary");
+    setEventStartDateTime(normalizeDateTimeLocal(event.start));
+    setEventEndDateTime(normalizeDateTimeLocal(event.end || event.start));
+    setEventLevel(normalizeCalendarLevel(event.extendedProps.calendar));
     openModal();
   };
 
@@ -175,22 +242,27 @@ const Calendar: React.FC = () => {
     if (isSavingEvent) return;
 
     const trimmedTitle = eventTitle.trim();
-    if (!trimmedTitle || !eventStartDate || !eventLevel) {
-      setApiError("Preencha título, data inicial e cor do evento.");
+    if (!trimmedTitle || !eventStartDateTime || !eventLevel) {
+      setApiError("Preencha título, início e categoria do evento.");
       return;
     }
 
-    if (eventEndDate && eventEndDate < eventStartDate) {
-      setApiError("A data final deve ser maior ou igual à data inicial.");
+    if (eventEndDateTime && eventEndDateTime < eventStartDateTime) {
+      setApiError("O término deve ser maior ou igual ao início.");
+      return;
+    }
+
+    if (isPastCalendarDate(new Date(eventStartDateTime))) {
+      setApiError("Não é possível agendar em dias que já passaram.");
       return;
     }
 
     const payload = {
       title: trimmedTitle,
-      start: eventStartDate,
-      end: eventEndDate || null,
+      start: toApiDateTime(eventStartDateTime),
+      end: eventEndDateTime ? toApiDateTime(eventEndDateTime) : null,
       calendar: eventLevel,
-      allDay: true,
+      allDay: false,
     };
 
     const isEditing = Boolean(selectedEvent);
@@ -221,43 +293,7 @@ const Calendar: React.FC = () => {
         return;
       }
 
-      const returned = await response.json().catch(() => null);
-      const normalizedReturned =
-        returned && typeof returned === "object"
-          ? normalizeEventFromApi(returned as ApiCalendarEvent)
-          : null;
-
-      if (isEditing && selectedEvent) {
-        const updatedEvent =
-          normalizedReturned ??
-          ({
-            id: selectedEvent.id,
-            title: payload.title,
-            start: payload.start,
-            end: payload.end ?? undefined,
-            allDay: true,
-            extendedProps: { calendar: payload.calendar },
-          } as CalendarEvent);
-
-        setEvents((prevEvents) =>
-          prevEvents.map((event) =>
-            event.id === selectedEvent.id ? updatedEvent : event
-          )
-        );
-      } else {
-        const createdEvent =
-          normalizedReturned ??
-          ({
-            id: Date.now().toString(),
-            title: payload.title,
-            start: payload.start,
-            end: payload.end ?? undefined,
-            allDay: true,
-            extendedProps: { calendar: payload.calendar },
-          } as CalendarEvent);
-
-        setEvents((prevEvents) => [...prevEvents, createdEvent]);
-      }
+      await loadEvents(visibleRange);
 
       closeModal();
       resetModalFields();
@@ -271,9 +307,9 @@ const Calendar: React.FC = () => {
 
   const resetModalFields = () => {
     setEventTitle("");
-    setEventStartDate("");
-    setEventEndDate("");
-    setEventLevel("Primary");
+    setEventStartDateTime("");
+    setEventEndDateTime("");
+    setEventLevel("primary");
     setSelectedEvent(null);
   };
 
@@ -343,11 +379,37 @@ const Calendar: React.FC = () => {
                 week: "Semana",
                 day: "Dia",
               }}
+              eventTimeFormat={{
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              }}
+              slotLabelFormat={{
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              }}
+              dayMaxEvents={true}
+              dayMaxEventRows={4}
+              expandRows={true}
+              height="auto"
+              nowIndicator={true}
+              slotDuration="00:30:00"
+              slotMinTime="06:00:00"
+              slotMaxTime="22:00:00"
+              selectAllow={(selectInfo) => !isPastCalendarDate(selectInfo.start)}
+              dayCellClassNames={(arg) =>
+                isPastCalendarDate(arg.date) ? ["fc-day-disabled-past"] : []
+              }
               events={events}
+              datesSet={handleDatesSet}
+              eventClassNames={(arg: { event: { extendedProps: { calendar?: string } } }) => [
+                "event-fc-color",
+                `fc-bg-${String(arg.event.extendedProps.calendar || "primary").toLowerCase()}`,
+              ]}
               selectable={true}
               select={handleDateSelect}
               eventClick={handleEventClick}
-              eventContent={renderEventContent}
               customButtons={{
                 addEventButton: {
                   text: "Adicionar evento +",
@@ -392,37 +454,37 @@ const Calendar: React.FC = () => {
               </div>
               <div className="mt-6">
                 <label className="block mb-4 text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Cor do evento
+                  Categoria do evento
                 </label>
                 <div className="flex flex-wrap items-center gap-4 sm:gap-5">
-                  {Object.entries(calendarsEvents).map(([key, value]) => (
-                    <div key={key} className="n-chk">
+                  {calendarsEvents.map(({ label, value }) => (
+                    <div key={value} className="n-chk">
                       <div
                         className={`form-check form-check-${value} form-check-inline`}
                       >
                         <label
                           className="flex items-center text-sm text-gray-700 form-check-label dark:text-gray-400"
-                          htmlFor={`modal${key}`}
+                          htmlFor={`modal-${value}`}
                         >
                           <span className="relative">
                             <input
                               className="sr-only form-check-input"
                               type="radio"
                               name="event-level"
-                              value={key}
-                              id={`modal${key}`}
-                              checked={eventLevel === key}
-                              onChange={() => setEventLevel(key)}
+                              value={value}
+                              id={`modal-${value}`}
+                              checked={eventLevel === value}
+                              onChange={() => setEventLevel(value)}
                             />
                             <span className="flex items-center justify-center w-5 h-5 mr-2 border border-gray-300 rounded-full box dark:border-gray-700">
                               <span
                                 className={`h-2 w-2 rounded-full bg-white ${
-                                  eventLevel === key ? "block" : "hidden"
+                                  eventLevel === value ? "block" : "hidden"
                                 }`}
                               ></span>
                             </span>
                           </span>
-                          {key}
+                          {label}
                         </label>
                       </div>
                     </div>
@@ -432,15 +494,15 @@ const Calendar: React.FC = () => {
 
               <div className="mt-6">
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Data de início
+                  Início (data e hora)
                 </label>
                 <div className="relative">
                   <input
-                    id="event-start-date"
-                    type="date"
+                    id="event-start-datetime"
+                    type="datetime-local"
                     lang="pt-BR"
-                    value={eventStartDate}
-                    onChange={(e) => setEventStartDate(e.target.value)}
+                    value={eventStartDateTime}
+                    onChange={(e) => setEventStartDateTime(e.target.value)}
                     className="clinic-input dark:bg-dark-900 h-11 w-full appearance-none bg-none px-4 py-2.5 pl-4 pr-11 text-gray-800 shadow-theme-xs placeholder:text-gray-400 dark:text-white/90 dark:placeholder:text-white/30"
                   />
                 </div>
@@ -448,15 +510,15 @@ const Calendar: React.FC = () => {
 
               <div className="mt-6">
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Data de término
+                  Término (data e hora)
                 </label>
                 <div className="relative">
                   <input
-                    id="event-end-date"
-                    type="date"
+                    id="event-end-datetime"
+                    type="datetime-local"
                     lang="pt-BR"
-                    value={eventEndDate}
-                    onChange={(e) => setEventEndDate(e.target.value)}
+                    value={eventEndDateTime}
+                    onChange={(e) => setEventEndDateTime(e.target.value)}
                     className="clinic-input dark:bg-dark-900 h-11 w-full appearance-none bg-none px-4 py-2.5 pl-4 pr-11 text-gray-800 shadow-theme-xs placeholder:text-gray-400 dark:text-white/90 dark:placeholder:text-white/30"
                   />
                 </div>
@@ -487,19 +549,6 @@ const Calendar: React.FC = () => {
         </Modal>
       </section>
     </>
-  );
-};
-
-const renderEventContent = (eventInfo: any) => {
-  const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar.toLowerCase()}`;
-  return (
-    <div
-      className={`event-fc-color flex fc-event-main ${colorClass} p-1 rounded-sm`}
-    >
-      <div className="fc-daygrid-event-dot"></div>
-      <div className="fc-event-time">{eventInfo.timeText}</div>
-      <div className="fc-event-title">{eventInfo.event.title}</div>
-    </div>
   );
 };
 

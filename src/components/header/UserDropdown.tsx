@@ -1,11 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { Link, useNavigate } from "react-router";
-import { clearAuthStorage } from "../../utils/auth";
+import {
+  clearAuthStorage,
+  getAuthProfile,
+  getProfileInitials,
+  type AuthProfile,
+} from "../../utils/auth";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
+  const [profile, setProfile] = useState<AuthProfile>(getAuthProfile);
   const navigate = useNavigate();
 
   function toggleDropdown() {
@@ -21,17 +27,38 @@ export default function UserDropdown() {
     closeDropdown();
     navigate("/signin", { replace: true });
   }
+
+  useEffect(() => {
+    const syncProfile = () => setProfile(getAuthProfile());
+    syncProfile();
+
+    window.addEventListener("focus", syncProfile);
+    window.addEventListener("storage", syncProfile);
+
+    return () => {
+      window.removeEventListener("focus", syncProfile);
+      window.removeEventListener("storage", syncProfile);
+    };
+  }, []);
   return (
     <div className="relative">
       <button
         onClick={toggleDropdown}
         className="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400"
       >
-        <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
-          <img src="/images/user/owner.jpg" alt="User" />
-        </span>
+        {profile.avatarUrl ? (
+          <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
+            <img src={profile.avatarUrl} alt={profile.fullName} />
+          </span>
+        ) : (
+          <span className="mr-3 flex h-11 w-11 items-center justify-center rounded-full bg-cyan-100 text-sm font-semibold text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300">
+            {getProfileInitials(profile.fullName)}
+          </span>
+        )}
 
-        <span className="block mr-1 font-medium text-theme-sm">Musharof</span>
+        <span className="block mr-1 font-medium text-theme-sm">
+          {profile.firstName}
+        </span>
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
@@ -59,10 +86,10 @@ export default function UserDropdown() {
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-            Musharof Chowdhury
+            {profile.fullName}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-            randomuser@pimjo.com
+            {profile.email || "-"}
           </span>
         </div>
 
