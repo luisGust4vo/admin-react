@@ -5,6 +5,37 @@ import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
 import Alert from "../ui/alert/Alert";
+import { hasAuthToken } from "../../utils/auth";
+
+type RegisterApiResponse = {
+  message?: string;
+};
+
+const resolveRegisterApiCandidates = () => {
+  const explicitUrl = import.meta.env.VITE_REGISTER_API_URL as string | undefined;
+  if (explicitUrl) {
+    return [explicitUrl.replace(/\/$/, "")];
+  }
+
+  const rawApiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+  if (!rawApiUrl) return ["/auth/register", "/register"];
+
+  const normalized = rawApiUrl.replace(/\/$/, "");
+  const derived = normalized
+    .replace(/\/auth\/login$/, "/auth/register")
+    .replace(/\/login$/, "/register");
+
+  const candidates = [derived];
+  try {
+    const parsed = new URL(rawApiUrl);
+    candidates.push(`${parsed.origin}/auth/register`, `${parsed.origin}/register`);
+  } catch {
+    candidates.push(`${normalized}/auth/register`, `${normalized}/register`);
+  }
+
+  candidates.push("/auth/register", "/register");
+  return [...new Set(candidates)];
+};
 
 export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -60,29 +91,42 @@ export default function SignUpForm() {
     setIsSubmitting(true);
 
     try {
-      const apiBase = import.meta.env.VITE_API_URL ?? "";
-      const normalizedBase = apiBase.replace(/\/$/, "");
-      const registerUrl = normalizedBase.endsWith("/register")
-        ? normalizedBase
-        : `${normalizedBase}/register`;
-      const response = await fetch(registerUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          name,
-          password,
-          termsAccepted: isChecked,
-        }),
-      });
+      const candidates = resolveRegisterApiCandidates();
+      let registered = false;
+      let lastErrorMessage = "Não foi possível criar sua conta.";
 
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        const message =
-          payload?.message || "Não foi possível criar sua conta.";
-        setFormError(message);
+      for (const endpoint of candidates) {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            name,
+            password,
+            termsAccepted: isChecked,
+          }),
+        });
+
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as
+            | RegisterApiResponse
+            | null;
+          lastErrorMessage = payload?.message || "Não foi possível cadastrar neste endpoint.";
+          if (response.status >= 500 || response.status === 404 || response.status === 405) {
+            continue;
+          }
+          break;
+        }
+
+        registered = true;
+        break;
+      }
+
+      if (!registered) {
+        setFormError(lastErrorMessage);
         return;
       }
 
@@ -107,7 +151,7 @@ export default function SignUpForm() {
     <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar">
       <div className="w-full max-w-md mx-auto mb-5 sm:pt-10">
         <Link
-          to="/"
+          to={hasAuthToken() ? "/" : "/signin"}
           className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
         >
           <ChevronLeftIcon className="size-5" />

@@ -2,6 +2,7 @@ import React from "react";
 import GridShape from "../../components/common/GridShape";
 import { Link } from "react-router";
 import ThemeTogglerTwo from "../../components/common/ThemeTogglerTwo";
+import { hasAuthToken } from "../../utils/auth";
 
 export default function AuthLayout({
   children,
@@ -19,7 +20,7 @@ export default function AuthLayout({
             <div className="absolute -left-20 top-24 h-64 w-64 rounded-full bg-cyan-300/20 blur-3xl"></div>
             <div className="absolute -right-24 bottom-10 h-72 w-72 rounded-full bg-emerald-300/15 blur-3xl"></div>
             <div className="relative flex flex-col max-w-md">
-              <Link to="/" className="mb-6 inline-flex w-fit rounded-xl border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm">
+              <Link to={hasAuthToken() ? "/" : "/signin"} className="mb-6 inline-flex w-fit rounded-xl border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm">
                 <div>
                   <p className="text-sm font-semibold tracking-[0.2em] text-cyan-100">
                     ODONTOPRO

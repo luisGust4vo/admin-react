@@ -6,6 +6,7 @@ import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
 import Button from "../ui/button/Button";
 import Alert from "../ui/alert/Alert";
+import { hasAuthToken } from "../../utils/auth";
 
 type LoginApiResponse = {
   token?: string;
@@ -83,7 +84,7 @@ export default function SignInForm() {
     const candidates = resolveLoginApiCandidates();
     let lastErrorMessage = "Não foi possível entrar com as credenciais informadas.";
     let authenticated = false;
-
+    console.log("Tentando endpoints de login:",JSON.stringify(candidates));
     for (const endpoint of candidates) {
       try {
         const response = await fetch(endpoint, {
@@ -151,7 +152,7 @@ export default function SignInForm() {
     <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar">
       <div className="w-full max-w-md pt-10 mx-auto">
         <Link
-          to="/"
+          to={hasAuthToken() ? "/" : "/signin"}
           className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
         >
           <ChevronLeftIcon className="size-5" />
