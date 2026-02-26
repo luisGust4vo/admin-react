@@ -6,6 +6,7 @@ import {
   CalenderIcon,
   ChatIcon,
   ChevronDownIcon,
+  BoxCubeIcon,
   DollarLineIcon,
   DocsIcon,
   GridIcon,
@@ -65,6 +66,11 @@ const navItems: NavItem[] = [
     icon: <PencilIcon />,
     name: "Odontograma",
     path: "/odontograma",
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Pesquisa Produtos",
+    path: "/pesquisa-produtos",
   },
 ];
 

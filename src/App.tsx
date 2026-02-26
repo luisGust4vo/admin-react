@@ -18,6 +18,7 @@ import ClinicExpenseControl from "./pages/ClinicExpenseControl";
 import RetentionCenter from "./pages/RetentionCenter";
 import SmartRecords from "./pages/SmartRecords";
 import Odontogram from "./pages/Odontogram";
+import ProductResearch from "./pages/ProductResearch";
 import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="/central-anti-faltas" element={<RetentionCenter />} />
               <Route path="/prontuario-inteligente" element={<SmartRecords />} />
               <Route path="/odontograma" element={<Odontogram />} />
+              <Route path="/pesquisa-produtos" element={<ProductResearch />} />
               <Route path="/blank" element={<Blank />} />
 
               {/* Forms */}
