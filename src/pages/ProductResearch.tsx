@@ -20,6 +20,13 @@ type ProductResult = {
   updatedAt: string;
 };
 
+type ProductSearchPayload = {
+  results?: ProductResult[];
+  message?: string;
+};
+
+type SortOption = "price_asc" | "price_desc" | "rating_desc" | "updated_desc";
+
 const categories: ProductCategory[] = [
   "Todos",
   "Materiais restauradores",
@@ -27,6 +34,40 @@ const categories: ProductCategory[] = [
   "Ortodontia",
   "Endodontia",
 ];
+
+const resolveCrawlerApiUrl = () => {
+  const explicitUrl = import.meta.env.VITE_PRODUCT_SEARCH_API_URL as
+    | string
+    | undefined;
+  if (explicitUrl) return explicitUrl.replace(/\/$/, "");
+
+  const rawApiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+  if (!rawApiUrl) return "/clinic/products/search";
+
+  try {
+    const parsed = new URL(rawApiUrl);
+    return `${parsed.origin}/clinic/products/search`;
+  } catch {
+    const normalized = rawApiUrl.replace(/\/$/, "");
+    return `${normalized.replace(/\/auth\/register$/, "").replace(/\/register$/, "")}/clinic/products/search`;
+  }
+};
+
+const CRAWLER_API_URL = resolveCrawlerApiUrl();
+
+const resolveSourceList = () => {
+  const envValue = import.meta.env.VITE_PRODUCT_CRAWLER_SOURCES as
+    | string
+    | undefined;
+
+  if (!envValue) return [];
+  return envValue
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const PRODUCT_SOURCES = resolveSourceList();
 
 const seedResults: ProductResult[] = [
   {
@@ -97,6 +138,8 @@ const ProductResearch: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [didSearch, setDidSearch] = useState(false);
   const [results, setResults] = useState<ProductResult[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>("price_asc");
 
   const averagePrice = useMemo(() => {
     if (!results.length) return 0;
@@ -108,28 +151,84 @@ const ProductResearch: React.FC = () => {
     return [...results].sort((a, b) => a.price - b.price)[0];
   }, [results]);
 
-  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
+  const sortedResults = useMemo(() => {
+    const items = [...results];
+
+    if (sortBy === "price_asc") return items.sort((a, b) => a.price - b.price);
+    if (sortBy === "price_desc") return items.sort((a, b) => b.price - a.price);
+    if (sortBy === "rating_desc") return items.sort((a, b) => b.rating - a.rating);
+    return items.sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    );
+  }, [results, sortBy]);
+
+  const handleSearch = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const normalizedTerm = term.trim();
+    if (!normalizedTerm) {
+      setSearchError("Digite um termo para pesquisar.");
+      return;
+    }
+
+    setSearchError(null);
     setIsSearching(true);
     setDidSearch(true);
 
-    const normalizedTerm = term.trim().toLowerCase();
-    const priceLimit = Number(maxPrice) || Number.POSITIVE_INFINITY;
+    const params = new URLSearchParams({
+      q: normalizedTerm,
+      limit: "20",
+    });
 
-    window.setTimeout(() => {
-      const filtered = seedResults.filter((product) => {
+    if (category !== "Todos") {
+      params.set("category", category);
+    }
+    if (maxPrice.trim()) {
+      params.set("maxPrice", maxPrice.trim());
+    }
+    if (PRODUCT_SOURCES.length) {
+      params.set("sources", PRODUCT_SOURCES.join(","));
+    }
+
+    try {
+      const response = await fetch(`${CRAWLER_API_URL}?${params.toString()}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as
+          | ProductSearchPayload
+          | null;
+        throw new Error(payload?.message || "Falha na busca de produtos.");
+      }
+
+      const payload = (await response.json().catch(() => ({}))) as ProductSearchPayload;
+      const apiResults = Array.isArray(payload.results) ? payload.results : [];
+      setResults(apiResults);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Falha na busca de produtos.";
+      setSearchError(`${errorMessage} Exibindo dados de exemplo.`);
+
+      const normalizedTermLower = normalizedTerm.toLowerCase();
+      const priceLimit = Number(maxPrice) || Number.POSITIVE_INFINITY;
+      const fallback = seedResults.filter((product) => {
         const matchTerm =
-          !normalizedTerm ||
-          product.name.toLowerCase().includes(normalizedTerm) ||
-          product.supplier.toLowerCase().includes(normalizedTerm);
+          !normalizedTermLower ||
+          product.name.toLowerCase().includes(normalizedTermLower) ||
+          product.supplier.toLowerCase().includes(normalizedTermLower);
         const matchCategory = category === "Todos" || product.category === category;
         const matchPrice = product.price <= priceLimit;
         return matchTerm && matchCategory && matchPrice;
       });
 
-      setResults(filtered);
+      setResults(fallback);
+    } finally {
       setIsSearching(false);
-    }, 700);
+    }
   };
 
   return (
@@ -187,6 +286,11 @@ const ProductResearch: React.FC = () => {
               {isSearching ? "Pesquisando..." : "Buscar produtos"}
             </button>
           </form>
+          {searchError && (
+            <p className="mt-3 text-sm text-error-600 dark:text-error-400">
+              {searchError}
+            </p>
+          )}
         </section>
 
         <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -215,9 +319,29 @@ const ProductResearch: React.FC = () => {
         </section>
 
         <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-            Produtos encontrados
-          </h2>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+              Produtos encontrados
+            </h2>
+            <select
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value as SortOption)}
+              className="h-10 rounded-xl border border-gray-300 bg-transparent px-3 text-sm text-gray-800 outline-none transition focus:border-cyan-500 dark:border-gray-700 dark:text-white"
+            >
+              <option value="price_asc" className="text-gray-900">
+                Menor preço
+              </option>
+              <option value="price_desc" className="text-gray-900">
+                Maior preço
+              </option>
+              <option value="rating_desc" className="text-gray-900">
+                Melhor avaliação
+              </option>
+              <option value="updated_desc" className="text-gray-900">
+                Mais recentes
+              </option>
+            </select>
+          </div>
 
           {!didSearch && (
             <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
@@ -231,7 +355,7 @@ const ProductResearch: React.FC = () => {
             </p>
           )}
 
-          {results.length > 0 && (
+          {sortedResults.length > 0 && (
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead>
@@ -248,7 +372,7 @@ const ProductResearch: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {results.map((item) => (
+                  {sortedResults.map((item) => (
                     <tr
                       key={item.id}
                       className="border-b border-gray-100 dark:border-gray-800"
