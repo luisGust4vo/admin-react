@@ -14,6 +14,9 @@ type ProductResult = {
   category: ProductCategory;
   supplier: string;
   price: number;
+  pixPrice?: number;
+  cardPrice?: number;
+  pixDiscountPercent?: number;
   shipping: number;
   rating: number;
   source: string;
@@ -75,7 +78,10 @@ const seedResults: ProductResult[] = [
     name: "Resina composta fotopolimerizável A2 4g",
     category: "Materiais restauradores",
     supplier: "Dental Prime",
-    price: 139.9,
+    price: 129.9,
+    pixPrice: 129.9,
+    cardPrice: 139.9,
+    pixDiscountPercent: 7,
     shipping: 14.9,
     rating: 4.8,
     source: "https://exemplo-loja-1.com/resina-a2",
@@ -86,7 +92,10 @@ const seedResults: ProductResult[] = [
     name: "Kit de mini implantes titânio 2.0mm",
     category: "Implantes",
     supplier: "Odonto Supply",
-    price: 899.0,
+    price: 859.0,
+    pixPrice: 859.0,
+    cardPrice: 899.0,
+    pixDiscountPercent: 4,
     shipping: 0,
     rating: 4.6,
     source: "https://exemplo-loja-2.com/mini-implantes",
@@ -97,7 +106,10 @@ const seedResults: ProductResult[] = [
     name: "Fio ortodôntico NiTi 0.014",
     category: "Ortodontia",
     supplier: "OrthoMax",
-    price: 54.5,
+    price: 52.9,
+    pixPrice: 52.9,
+    cardPrice: 54.5,
+    pixDiscountPercent: 3,
     shipping: 11.0,
     rating: 4.4,
     source: "https://exemplo-loja-3.com/fio-niti-014",
@@ -108,7 +120,10 @@ const seedResults: ProductResult[] = [
     name: "Lima rotatória reciprocante sortida",
     category: "Endodontia",
     supplier: "Canal Expert",
-    price: 129.0,
+    price: 124.9,
+    pixPrice: 124.9,
+    cardPrice: 129.0,
+    pixDiscountPercent: 3,
     shipping: 19.9,
     rating: 4.5,
     source: "https://exemplo-loja-4.com/lima-rotatoria",
@@ -177,7 +192,7 @@ const ProductResearch: React.FC = () => {
 
     const params = new URLSearchParams({
       q: normalizedTerm,
-      limit: "20",
+      limit: "8",
     });
 
     if (category !== "Todos") {
@@ -362,7 +377,7 @@ const ProductResearch: React.FC = () => {
                   <tr className="border-b border-gray-200 dark:border-gray-800">
                     <th className="px-3 py-2 font-medium text-gray-500">Produto</th>
                     <th className="px-3 py-2 font-medium text-gray-500">Fornecedor</th>
-                    <th className="px-3 py-2 font-medium text-gray-500">Preço</th>
+                    <th className="px-3 py-2 font-medium text-gray-500">Condição</th>
                     <th className="px-3 py-2 font-medium text-gray-500">Frete</th>
                     <th className="px-3 py-2 font-medium text-gray-500">Nota</th>
                     <th className="px-3 py-2 font-medium text-gray-500">
@@ -383,8 +398,16 @@ const ProductResearch: React.FC = () => {
                       <td className="px-3 py-3 text-gray-800 dark:text-gray-200">
                         {item.supplier}
                       </td>
-                      <td className="px-3 py-3 font-medium text-gray-900 dark:text-white">
-                        {formatCurrency(item.price)}
+                      <td className="px-3 py-3 text-gray-800 dark:text-gray-200">
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {`Pix: ${formatCurrency(item.pixPrice ?? item.price)}`}
+                          {typeof item.pixDiscountPercent === "number" &&
+                            item.pixDiscountPercent > 0 &&
+                            ` (-${item.pixDiscountPercent}%)`}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {`Cartão: ${formatCurrency(item.cardPrice ?? item.price)}`}
+                        </p>
                       </td>
                       <td className="px-3 py-3 text-gray-800 dark:text-gray-200">
                         {item.shipping === 0
